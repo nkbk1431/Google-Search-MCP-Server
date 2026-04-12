@@ -162,8 +162,9 @@ class ApiClient {
     await _saveTokens(resp.data);
   }
 
-  /// 로그아웃 (로컬 토큰 삭제)
+  /// 로그아웃 (로컬 토큰 삭제 + FCM 해제)
   Future<void> logout() async {
+    await unregisterFcmToken();
     await _storage.delete(key: AppConstants.keyAccessToken);
     await _storage.delete(key: AppConstants.keyRefreshToken);
     ApiClient.reset();
@@ -190,6 +191,24 @@ class ApiClient {
   /// 선호도 삭제
   Future<void> deletePreference(String key) async {
     await _dio.delete('/preferences/$key');
+  }
+
+  /// FCM 토큰 서버에 등록
+  Future<void> registerFcmToken(String fcmToken) async {
+    if (_connectivity.isOffline) return; // 오프라인이면 조용히 스킵
+    try {
+      await _dio.post('/webhook/fcm/register', data: {'fcm_token': fcmToken});
+    } catch (_) {
+      // FCM 등록 실패는 비치명적 — 로그만 기록
+      debugPrint('[ApiClient] FCM 토큰 등록 실패 (무시)');
+    }
+  }
+
+  /// FCM 토큰 서버에서 삭제 (로그아웃 시)
+  Future<void> unregisterFcmToken() async {
+    try {
+      await _dio.delete('/webhook/fcm/unregister');
+    } catch (_) {}
   }
 
   Future<void> _saveTokens(Map<String, dynamic> data) async {

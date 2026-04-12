@@ -85,3 +85,16 @@ class TokenUsage(Base):
 
     def __repr__(self) -> str:
         return f"<TokenUsage user={self.user_id} in={self.input_tokens} out={self.output_tokens}>"
+
+
+class FcmToken(Base):
+    """사용자별 Firebase Cloud Messaging 토큰 저장."""
+    __tablename__ = "fcm_tokens"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(128), nullable=False, unique=True, index=True)
+    token = Column(String(512), nullable=False)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<FcmToken user={self.user_id} token={self.token[:20]}...>"
