@@ -143,7 +143,7 @@ class TestSendPush:
 
 class TestPushReminderToUser:
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_push_reminder_skips_when_no_token(self):
         from app.api.webhook import push_reminder_to_user
 
@@ -153,7 +153,7 @@ class TestPushReminderToUser:
 
         mock_send.assert_not_called()
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_push_reminder_sends_when_token_exists(self):
         from app.api.webhook import push_reminder_to_user
 

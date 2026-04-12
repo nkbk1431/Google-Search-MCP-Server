@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: louis-assistant/backend
 
     strategy:
       matrix:
@@ -52,7 +52,7 @@ jobs:
         if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v4
         with:
-          files: backend/coverage.xml
+          files: louis-assistant/backend/coverage.xml
           flags: backend
           fail_ci_if_error: false
 
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: louis-assistant/backend
 
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mobile
+        working-directory: louis-assistant/mobile
 
     steps:
       - uses: actions/checkout@v4
@@ -111,7 +111,7 @@ jobs:
       - name: Upload Flutter coverage
         uses: codecov/codecov-action@v4
         with:
-          files: mobile/coverage/lcov.info
+          files: louis-assistant/mobile/coverage/lcov.info
           flags: flutter
           fail_ci_if_error: false
 
