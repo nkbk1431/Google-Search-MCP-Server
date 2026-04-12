@@ -1,0 +1,59 @@
+# 환경변수 및 비밀키 (절대 커밋 금지)
+.env
+.env.*
+!.env.example
+
+# Google OAuth 토큰 및 인증서
+token.json
+credentials.json
+service-account-key.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+
+# 로컬 DB
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# 로그
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# 임시 파일
+*.tmp
+*.bak
+
+# Picovoice 모델 파일 (용량 큼, 별도 관리)
+# assets/wake_words/*.ppn
+# assets/wake_words/*.pv

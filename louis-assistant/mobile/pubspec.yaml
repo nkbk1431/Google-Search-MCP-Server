@@ -1,0 +1,61 @@
+name: louis
+description: 루이스(Louis) AI 개인비서 앱
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: '>=3.16.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 웨이크워드
+  porcupine_flutter: ^3.0.0
+
+  # 음성 입출력
+  speech_to_text: ^6.6.0
+  flutter_tts: ^4.0.2
+
+  # HTTP
+  dio: ^5.4.0
+
+  # 보안 저장소 (JWT 토큰)
+  flutter_secure_storage: ^9.0.0
+
+  # 상태관리
+  riverpod: ^2.5.1
+  flutter_riverpod: ^2.5.1
+
+  # 로컬 알림
+  flutter_local_notifications: ^17.2.1+2
+
+  # Firebase
+  firebase_core: ^2.32.0
+  firebase_messaging: ^14.9.4
+
+  # Google 로그인
+  google_sign_in: ^6.2.1
+
+  # 권한
+  permission_handler: ^11.3.1
+
+  # 백그라운드 서비스
+  flutter_foreground_task: ^8.0.1
+
+  # 기타 유틸
+  shared_preferences: ^2.2.3
+  intl: ^0.19.0
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/wake_words/
+    - assets/images/
