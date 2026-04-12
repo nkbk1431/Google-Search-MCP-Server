@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">루이스</string>
+    <string name="widget_description">루이스 AI 비서 — 빠른 음성 입력과 리마인더 확인</string>
+</resources>

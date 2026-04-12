@@ -1,12 +1,21 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants.dart';
+import 'connectivity_service.dart';
+
+/// 네트워크 없음 예외
+class OfflineException implements Exception {
+  const OfflineException();
+  @override
+  String toString() => '인터넷 연결이 없어요.';
+}
 
 /// 루이스 백엔드 API 클라이언트
 class ApiClient {
   static ApiClient? _instance;
   late final Dio _dio;
   final _storage = const FlutterSecureStorage();
+  final _connectivity = ConnectivityService();
 
   ApiClient._() {
     _dio = Dio(BaseOptions(
@@ -48,6 +57,8 @@ class ApiClient {
 
   /// 루이스에게 말하기
   Future<ChatResponse> chat(String text, {String sessionId = 'default'}) async {
+    if (_connectivity.isOffline) throw const OfflineException();
+
     final resp = await _dio.post('/chat', data: {
       'text': text,
       'session_id': sessionId,
@@ -57,6 +68,8 @@ class ApiClient {
 
   /// 로그인
   Future<void> login(String username, String password) async {
+    if (_connectivity.isOffline) throw const OfflineException();
+
     final resp = await _dio.post(
       '/auth/token',
       data: 'username=$username&password=$password',

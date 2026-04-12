@@ -16,6 +16,7 @@ from slowapi.util import get_remote_address
 from app.agent.orchestrator import get_agent
 from app.api.auth import get_current_user
 from app.config import settings
+from app.services.personalization import get_personalization_service
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -92,6 +93,50 @@ async def chat_stream(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/preferences", summary="사용자 선호도 조회")
+async def get_preferences(username: str = Depends(get_current_user)):
+    """학습된 사용자 선호도 전체를 반환합니다."""
+    svc = get_personalization_service()
+    return {"user": username, "preferences": svc.get_all_preferences(username)}
+
+
+@router.put("/preferences/{key}", summary="사용자 선호도 수동 설정")
+async def set_preference(
+    key: str,
+    value: str,
+    username: str = Depends(get_current_user),
+):
+    """특정 선호도 키-값을 명시적으로 저장합니다."""
+    svc = get_personalization_service()
+    svc.set_preference(username, key, value)
+    return {"user": username, "key": key, "value": value, "status": "saved"}
+
+
+@router.delete("/preferences/{key}", summary="사용자 선호도 삭제")
+async def delete_preference(
+    key: str,
+    username: str = Depends(get_current_user),
+):
+    """특정 선호도를 삭제합니다."""
+    from app.db.session import get_sync_db
+    from app.db.models import UserPreference
+
+    with get_sync_db() as db:
+        row = (
+            db.query(UserPreference)
+            .filter(
+                UserPreference.user_id == username,
+                UserPreference.pref_key == key,
+            )
+            .first()
+        )
+        if row is None:
+            raise HTTPException(status_code=404, detail="선호도를 찾을 수 없어요.")
+        db.delete(row)
+        db.commit()
+    return {"status": "deleted", "key": key}
 
 
 @router.get("/chat/usage", summary="오늘 토큰 사용량 조회")

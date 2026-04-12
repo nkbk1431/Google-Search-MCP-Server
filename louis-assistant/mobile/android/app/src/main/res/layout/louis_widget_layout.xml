@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 루이스 홈 화면 위젯 레이아웃 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="12dp">
+
+    <!-- 헤더: 루이스 로고 + 이름 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="루이스"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/widget_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="대기 중"
+            android:textSize="11sp"
+            android:textColor="#CCFFFFFF" />
+    </LinearLayout>
+
+    <!-- 마지막 리마인더 표시 -->
+    <TextView
+        android:id="@+id/widget_reminder_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="예정된 리마인더가 없어요"
+        android:textSize="13sp"
+        android:textColor="#E0FFFFFF"
+        android:gravity="center_vertical"
+        android:ellipsize="end"
+        android:maxLines="2" />
+
+    <!-- 하단 버튼 영역 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="4dp">
+
+        <!-- 음성 입력 버튼 -->
+        <TextView
+            android:id="@+id/widget_btn_mic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎤 말하기"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/widget_button_bg"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:layout_marginEnd="8dp" />
+
+        <!-- 앱 열기 버튼 -->
+        <TextView
+            android:id="@+id/widget_btn_open"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="앱 열기"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/widget_button_bg"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp" />
+    </LinearLayout>
+
+</LinearLayout>

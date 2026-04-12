@@ -19,6 +19,8 @@ from app.agent.prompts import (
     DAILY_LIMIT_REPLY,
     ERROR_REPLY,
 )
+from app.agent.summarizer import ConversationSummarizer
+from app.services.personalization import get_personalization_service
 from app.agent.router import classify_intent, Intent
 from app.agent.tools.weather import get_weather, recommend_outfit
 from app.agent.tools.calendar import (
@@ -57,6 +59,8 @@ class LouisAgent:
         self._tools = self._load_tools()
         self._agent = self._build_agent(self._haiku)
         self._agent_sonnet = self._build_agent(self._sonnet)
+        self._summarizer = ConversationSummarizer()
+        self._personalization = get_personalization_service()
         log.info(f"LouisAgent 초기화 완료. 기본모델={settings.llm_default_model}")
 
     def _build_llm(self, model: str) -> ChatAnthropic:
@@ -126,11 +130,29 @@ class LouisAgent:
         use_sonnet = route.intent in (Intent.GENERAL,) and len(user_text) > 100
         agent = self._agent_sonnet if use_sonnet else self._agent
 
+        # 사용자 발화에서 선호도 학습 (비동기 불필요 — 빠른 regex)
+        self._personalization.learn_from_text(user_id, user_text)
+
+        # 턴 카운터 증가 및 요약 컨텍스트 준비
+        self._summarizer.increment_turn(session_id)
+        summary_ctx = self._summarizer.build_summary_context(session_id)
+
+        # 개인화 컨텍스트 추가
+        personal_ctx = self._personalization.build_personalization_context(user_id)
+        if personal_ctx:
+            summary_ctx = personal_ctx + summary_ctx
+
         # LangGraph Agent 호출
         for attempt in range(3):
             try:
-                result = await self._invoke_agent(agent, user_text, session_id)
+                result = await self._invoke_agent(agent, user_text, session_id, summary_ctx)
                 self._record_tokens(user_id, session_id, result.get("tokens", {}))
+
+                # 요약 필요 여부 확인 후 백그라운드로 요약 수행
+                if self._summarizer.should_summarize(session_id):
+                    asyncio.create_task(
+                        self._run_summarization(session_id, agent)
+                    )
 
                 # 긴 응답 요약
                 reply = result["reply"]
@@ -149,12 +171,33 @@ class LouisAgent:
 
         return {"reply": ERROR_REPLY, "tool_calls": [], "tokens": {}}
 
+    async def _run_summarization(self, session_id: str, agent) -> None:
+        """백그라운드에서 대화 요약을 실행합니다."""
+        try:
+            # MemorySaver에서 현재 메시지 목록 추출
+            state = await agent.aget_state(
+                config={"configurable": {"thread_id": session_id}}
+            )
+            messages = state.values.get("messages", []) if state else []
+            if messages:
+                await self._summarizer.summarize_if_needed(session_id, messages)
+        except Exception as exc:
+            log.debug(f"[{session_id}] 백그라운드 요약 실패 (무시): {exc}")
+
     async def _invoke_agent(
-        self, agent, user_text: str, session_id: str
+        self, agent, user_text: str, session_id: str, summary_ctx: str = ""
     ) -> dict[str, Any]:
         """Agent를 비동기 호출하고 결과를 파싱합니다."""
+        # 요약 컨텍스트가 있으면 메시지에 포함
+        input_messages: list = [HumanMessage(content=user_text)]
+        if summary_ctx:
+            # 요약을 별도 HumanMessage 접두사로 전달 (시스템 프롬프트 수정 없이)
+            input_messages = [
+                HumanMessage(content=f"[컨텍스트]{summary_ctx}\n\n{user_text}")
+            ]
+
         result = await agent.ainvoke(
-            {"messages": [HumanMessage(content=user_text)]},
+            {"messages": input_messages},
             config={"configurable": {"thread_id": session_id}},
         )
         messages = result.get("messages", [])
