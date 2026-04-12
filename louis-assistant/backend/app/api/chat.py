@@ -7,12 +7,17 @@ import asyncio
 import logging
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.agent.orchestrator import get_agent
 from app.api.auth import get_current_user
+from app.config import settings
+
+limiter = Limiter(key_func=get_remote_address)
 
 log = logging.getLogger("louis.api.chat")
 
@@ -31,7 +36,9 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/chat", response_model=ChatResponse, summary="루이스에게 말하기")
+@limiter.limit("30/minute")
 async def chat(
+    request: Request,
     req: ChatRequest,
     username: str = Depends(get_current_user),
 ):
@@ -89,12 +96,20 @@ async def chat_stream(
 
 @router.get("/chat/usage", summary="오늘 토큰 사용량 조회")
 async def get_usage(username: str = Depends(get_current_user)):
-    """오늘 사용한 토큰 수를 반환합니다."""
+    """오늘 사용한 토큰 수와 월간 예상 비용을 반환합니다."""
     agent = get_agent()
     usage = agent.get_token_usage(username)
+    total_today = usage.get("in", 0) + usage.get("out", 0)
+
+    from app.utils.token_tracker import get_monthly_cost_usd
+    monthly_cost = get_monthly_cost_usd(username)
+
     return {
         "user": username,
         "today_tokens": usage,
-        "limit": 100_000,
-        "remaining": max(0, 100_000 - usage.get("in", 0) - usage.get("out", 0)),
+        "today_total": total_today,
+        "daily_limit": settings.daily_token_limit,
+        "remaining": max(0, settings.daily_token_limit - total_today),
+        "monthly_cost_usd": monthly_cost,
+        "monthly_budget_usd": settings.monthly_budget_usd,
     }

@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any
 
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
@@ -31,6 +31,8 @@ from app.agent.tools.memo import add_memo, search_memo, list_memos
 from app.agent.tools.finance import convert_currency, get_stock_price
 from app.agent.tools.translate import translate_text
 from app.agent.tools.search import web_search
+from app.agent.tools.alarm import set_alarm, cancel_alarm, list_alarms
+from app.agent.tools.navigation import get_directions
 
 log = logging.getLogger("louis.orchestrator")
 
@@ -71,11 +73,13 @@ class LouisAgent:
             add_calendar_event, list_calendar_events,
             delete_calendar_event, search_calendar_events,
             set_reminder, set_reminder_at,
+            set_alarm, cancel_alarm, list_alarms,
             add_todo, list_todos, complete_todo,
             add_memo, search_memo, list_memos,
             convert_currency, get_stock_price,
             translate_text,
             web_search,
+            get_directions,
         ]
 
     def _build_agent(self, llm: ChatAnthropic):
@@ -126,7 +130,7 @@ class LouisAgent:
         for attempt in range(3):
             try:
                 result = await self._invoke_agent(agent, user_text, session_id)
-                self._record_tokens(user_id, result.get("tokens", {}))
+                self._record_tokens(user_id, session_id, result.get("tokens", {}))
 
                 # 긴 응답 요약
                 reply = result["reply"]
@@ -197,12 +201,32 @@ class LouisAgent:
         total = usage.get("in", 0) + usage.get("out", 0)
         return total >= settings.daily_token_limit
 
-    def _record_tokens(self, user_id: str, tokens: dict):
+    def _record_tokens(self, user_id: str, session_id: str, tokens: dict, model: str = ""):
+        """토큰 사용량을 메모리 + DB에 기록합니다."""
+        in_tok = tokens.get("in", 0)
+        out_tok = tokens.get("out", 0)
+        if in_tok == 0 and out_tok == 0:
+            return
+
+        # 메모리 집계
         today = datetime.now().date().isoformat()
         key = f"{user_id}:{today}"
         existing = _session_tokens.setdefault(key, {"in": 0, "out": 0})
-        existing["in"] += tokens.get("in", 0)
-        existing["out"] += tokens.get("out", 0)
+        existing["in"] += in_tok
+        existing["out"] += out_tok
+
+        # DB 비동기 저장 (fire-and-forget)
+        try:
+            from app.utils.token_tracker import record_usage
+            record_usage(
+                user_id=user_id,
+                session_id=session_id,
+                model=model or settings.llm_default_model,
+                input_tokens=in_tok,
+                output_tokens=out_tok,
+            )
+        except Exception as exc:
+            log.debug(f"토큰 DB 기록 실패 (무시): {exc}")
 
     def get_token_usage(self, user_id: str) -> dict:
         """사용자 오늘 토큰 사용량 조회."""

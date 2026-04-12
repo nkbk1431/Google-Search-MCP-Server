@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'chat_provider.dart';
+import '../settings/settings_screen.dart';
 
 /// 루이스 채팅 메인 화면
 class ChatScreen extends ConsumerStatefulWidget {
@@ -61,6 +62,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             icon: const Icon(Icons.delete_outline),
             tooltip: '대화 초기화',
             onPressed: () => chatNotifier.clearHistory(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: '설정',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
         ],
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/api_client.dart';
 import '../../core/services/voice_service.dart';
+import '../../core/services/wake_word_service.dart';
+import '../../core/services/voice_pipeline.dart';
 
 // ── 메시지 모델 ──────────────────────────────────────────��─────────
 
@@ -139,6 +141,20 @@ final voiceServiceProvider = ChangeNotifierProvider<VoiceService>((ref) {
   final service = VoiceService();
   service.initialize();
   return service;
+});
+
+final wakeWordServiceProvider = ChangeNotifierProvider<WakeWordService>((ref) {
+  return WakeWordService();
+});
+
+final voicePipelineProvider = ChangeNotifierProvider<VoicePipeline>((ref) {
+  final voice = ref.watch(voiceServiceProvider);
+  final wakeWord = ref.watch(wakeWordServiceProvider);
+  return VoicePipeline(
+    voice: voice,
+    wakeWord: wakeWord,
+    sessionId: 'app-session-1',
+  );
 });
 
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {

@@ -36,9 +36,13 @@ dateparser==1.2.0
 # Caching
 redis==5.2.0
 
+# Rate limiting
+slowapi==0.1.9
+
 # Testing
 pytest==8.3.3
 pytest-asyncio==0.24.0
+pytest-mock==3.14.0
 requests-mock==1.12.1
 
 # Monitoring

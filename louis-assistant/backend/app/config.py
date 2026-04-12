@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     spotify_client_id: str = ""
     spotify_client_secret: str = ""
 
+    # ── 지도 ───────────────────────────────────────────────
+    google_maps_api_key: str = ""
+
     # ── 앱 ────────────────────────────────────────────────
     app_env: str = "development"
     app_secret_key: str = "change-this-to-a-long-random-string"
