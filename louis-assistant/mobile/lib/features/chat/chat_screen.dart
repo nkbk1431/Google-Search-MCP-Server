@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'chat_provider.dart';
 import '../settings/settings_screen.dart';
@@ -192,62 +193,108 @@ class _MessageBubble extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment:
+            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
-            const CircleAvatar(
-              radius: 14,
-              backgroundColor: Colors.blueAccent,
-              child: Text('L', style: TextStyle(color: Colors.white, fontSize: 11)),
-            ),
-            const SizedBox(width: 6),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: msg.isOfflineNotice
-                    ? Colors.orange.shade50
-                    : isUser
-                        ? theme.colorScheme.primaryContainer
-                        : theme.colorScheme.surfaceVariant,
-                border: msg.isOfflineNotice
-                    ? Border.all(color: Colors.orange.shade200)
-                    : null,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
+          Row(
+            mainAxisAlignment:
+                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!isUser) ...[
+                const CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.blueAccent,
+                  child: Text('L',
+                      style:
+                          TextStyle(color: Colors.white, fontSize: 11)),
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (msg.isOfflineNotice) ...[
-                    const Icon(Icons.wifi_off, size: 14, color: Colors.orange),
-                    const SizedBox(width: 6),
-                  ],
-                  Flexible(
-                    child: Text(
-                      msg.text,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: msg.isOfflineNotice ? Colors.orange.shade800 : null,
+                const SizedBox(width: 6),
+              ],
+              Flexible(
+                child: GestureDetector(
+                  onLongPress: () {
+                    Clipboard.setData(ClipboardData(text: msg.text));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('클립보드에 복사됐어요'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: msg.isOfflineNotice
+                          ? Colors.orange.shade50
+                          : isUser
+                              ? theme.colorScheme.primaryContainer
+                              : theme.colorScheme.surfaceVariant,
+                      border: msg.isOfflineNotice
+                          ? Border.all(color: Colors.orange.shade200)
+                          : null,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isUser ? 16 : 4),
+                        bottomRight: Radius.circular(isUser ? 4 : 16),
                       ),
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (msg.isOfflineNotice) ...[
+                          const Icon(Icons.wifi_off,
+                              size: 14, color: Colors.orange),
+                          const SizedBox(width: 6),
+                        ],
+                        Flexible(
+                          child: Text(
+                            msg.text,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: msg.isOfflineNotice
+                                  ? Colors.orange.shade800
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
+              ),
+              if (isUser) const SizedBox(width: 6),
+            ],
+          ),
+          // 타임스탬프
+          Padding(
+            padding: EdgeInsets.only(
+              left: isUser ? 0 : 40,
+              right: isUser ? 6 : 0,
+              top: 2,
+            ),
+            child: Text(
+              _formatTime(msg.timestamp),
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.outline.withOpacity(0.6),
               ),
             ),
           ),
-          if (isUser) const SizedBox(width: 6),
         ],
       ),
     );
+  }
+
+  String _formatTime(DateTime dt) {
+    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final ampm = dt.hour < 12 ? '오전' : '오후';
+    return '$ampm $h:$m';
   }
 }
 

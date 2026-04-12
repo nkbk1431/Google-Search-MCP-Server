@@ -8,7 +8,7 @@ import logging
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -17,6 +17,7 @@ from app.agent.orchestrator import get_agent
 from app.api.auth import get_current_user
 from app.config import settings
 from app.services.personalization import get_personalization_service
+from app.services.tts_service import get_tts_service
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -93,6 +94,37 @@ async def chat_stream(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.post("/tts", summary="텍스트 → 음성 변환 (ElevenLabs)")
+@limiter.limit("20/minute")
+async def text_to_speech(
+    request: Request,
+    text: str,
+    voice_id: str = "21m00Tcm4TlvDq8ikWAM",
+    username: str = Depends(get_current_user),
+):
+    """
+    텍스트를 MP3 오디오로 변환합니다.
+    ElevenLabs API 키가 없으면 204 No Content를 반환합니다.
+    """
+    tts = get_tts_service()
+    audio = tts.synthesize(text, voice_id=voice_id)
+    if audio is None:
+        return Response(status_code=204)
+    return Response(
+        content=audio,
+        media_type="audio/mpeg",
+        headers={"Content-Disposition": "inline; filename=louis_tts.mp3"},
+    )
+
+
+@router.get("/tts/voices", summary="사용 가능한 TTS 보이스 목록")
+async def list_voices(username: str = Depends(get_current_user)):
+    """ElevenLabs 보이스 ID와 이름 목록을 반환합니다."""
+    tts = get_tts_service()
+    voices = tts.list_voices()
+    return {"voices": [{"id": v["voice_id"], "name": v["name"]} for v in voices]}
 
 
 @router.get("/preferences", summary="사용자 선호도 조회")
