@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/constants.dart';
+import 'features/auth/auth_provider.dart';
+import 'features/auth/login_screen.dart';
 import 'features/chat/chat_screen.dart';
 import 'features/tasks/tasks_screen.dart';
 import 'features/memo/memo_screen.dart';
@@ -24,19 +26,59 @@ void main() async {
   );
 }
 
-class LouisApp extends StatelessWidget {
+class LouisApp extends ConsumerWidget {
   final bool onboardingDone;
   const LouisApp({super.key, required this.onboardingDone});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: '루이스',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: onboardingDone ? const HomeShell() : const OnboardingScreen(),
+      home: _buildHome(ref),
+    );
+  }
+
+  Widget _buildHome(WidgetRef ref) {
+    if (!onboardingDone) return const OnboardingScreen();
+
+    final authState = ref.watch(authProvider);
+    return switch (authState.status) {
+      AuthStatus.unknown => const _SplashScreen(),
+      AuthStatus.unauthenticated => const LoginScreen(),
+      AuthStatus.authenticated => const HomeShell(),
+    };
+  }
+}
+
+/// 인증 상태 확인 중 표시되는 스플래시
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.blueAccent,
+              child: Text('L',
+                  style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+            ),
+            SizedBox(height: 24),
+            CircularProgressIndicator(),
+          ],
+        ),
+      ),
     );
   }
 }

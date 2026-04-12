@@ -1,0 +1,182 @@
+name: Louis CI
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── 백엔드 테스트 ─────────────────────────────────────────────────────
+jobs:
+  backend-test:
+    name: Backend Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pytest
+        env:
+          ANTHROPIC_API_KEY: sk-ant-test-ci-key
+          OPENWEATHER_API_KEY: test-weather-key
+          SERPER_API_KEY: test-serper-key
+          DEEPL_API_KEY: test-deepl-key:fx
+          APP_SECRET_KEY: test-secret-key-for-ci-only
+          DATABASE_URL: sqlite+aiosqlite:///./test_ci.db
+        run: |
+          pytest tests/ -v --tb=short \
+            --cov=app --cov-report=xml --cov-report=term-missing \
+            -x
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          files: backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+
+  # ── 백엔드 린트 ───────────────────────────────────────────────────────
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install lint tools
+        run: pip install ruff mypy
+
+      - name: ruff check
+        run: ruff check app/ --select=E,W,F --ignore=E501
+
+      - name: mypy (non-blocking)
+        run: mypy app/ --ignore-missing-imports --no-strict-optional || true
+
+  # ── Flutter 빌드 및 테스트 ────────────────────────────────────────────
+  flutter-test:
+    name: Flutter Test & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.x"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test --coverage
+
+      - name: Upload Flutter coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: mobile/coverage/lcov.info
+          flags: flutter
+          fail_ci_if_error: false
+
+  # ── Docker 빌드 검증 ──────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: louis-assistant/backend
+          push: false
+          tags: louis-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 배포 (main 브랜치 + 모든 테스트 통과 시) ─────────────────────────
+  deploy:
+    name: Deploy to Cloud Run
+    needs: [backend-test, flutter-test, docker-build]
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'your-org/louis-assistant'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push to Artifact Registry
+        run: |
+          gcloud builds submit louis-assistant/backend \
+            --tag asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/louis/api:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy louis-api \
+            --image asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/louis/api:${{ github.sha }} \
+            --region asia-northeast3 \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --set-env-vars="APP_ENV=production"
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Deployment ${{ job.status }} — SHA: ${{ github.sha }}"

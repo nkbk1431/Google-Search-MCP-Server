@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.config import settings
 
@@ -39,6 +39,15 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_]+$")
+    password: str = Field(..., min_length=8, max_length=64)
 
 
 def _create_token(data: dict, expires_delta: timedelta) -> str:
@@ -83,6 +92,66 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         timedelta(seconds=settings.jwt_refresh_token_expire),
     )
     return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/refresh", response_model=Token, summary="액세스 토큰 갱신")
+async def refresh_token(req: RefreshRequest):
+    """리프레시 토큰으로 새 액세스/리프레시 토큰 쌍을 발급합니다."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="리프레시 토큰이 유효하지 않아요.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(req.refresh_token, settings.app_secret_key, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise credentials_exception
+        username: str | None = payload.get("sub")
+        if username is None or username not in _FAKE_USERS:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    access_token = _create_token(
+        {"sub": username},
+        timedelta(seconds=settings.jwt_access_token_expire),
+    )
+    new_refresh = _create_token(
+        {"sub": username, "type": "refresh"},
+        timedelta(seconds=settings.jwt_refresh_token_expire),
+    )
+    return Token(access_token=access_token, refresh_token=new_refresh)
+
+
+@router.post("/register", response_model=Token, summary="신규 사용자 등록", status_code=201)
+async def register(req: RegisterRequest):
+    """새 사용자를 등록하고 즉시 토큰을 발급합니다."""
+    if req.username in _FAKE_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="이미 사용 중인 아이디예요.",
+        )
+    _FAKE_USERS[req.username] = {
+        "username": req.username,
+        "hashed_password": pwd_context.hash(req.password),
+    }
+    log.info(f"신규 사용자 등록: {req.username}")
+    access_token = _create_token(
+        {"sub": req.username},
+        timedelta(seconds=settings.jwt_access_token_expire),
+    )
+    refresh_token = _create_token(
+        {"sub": req.username, "type": "refresh"},
+        timedelta(seconds=settings.jwt_refresh_token_expire),
+    )
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.delete("/me", summary="계정 삭제", status_code=204)
+async def delete_account(username: str = Depends(get_current_user)):
+    """현재 로그인된 사용자 계정을 삭제합니다."""
+    _FAKE_USERS.pop(username, None)
+    log.info(f"계정 삭제: {username}")
 
 
 @router.get("/me", summary="현재 사용자 정보")
