@@ -163,6 +163,32 @@ def _extract_data(intent: Intent, text: str) -> dict:
         if m:
             extracted["amount"] = float(m.group(1).replace(",", ""))
 
+    elif intent == Intent.COMMUNICATION:
+        m = re.search(r"(전화|문자|카톡)\s*(.{1,20}?)(?:에게|한테|에게|에)?(?:\s|$)", text)
+        if m:
+            extracted["action"] = m.group(1)
+            extracted["contact"] = m.group(2).strip()
+
+    elif intent == Intent.MEDIA:
+        m = re.search(r"(?:틀어줘|재생|검색)?\s*(.{1,40}?)\s*(?:노래|음악|틀어줘|재생)", text)
+        if m:
+            extracted["query"] = m.group(1).strip()
+        if "유튜브" in text:
+            extracted["platform"] = "youtube"
+            m2 = re.search(r"유튜브에서?\s*(.{1,40}?)\s*(?:검색|찾아|봐)", text)
+            if m2:
+                extracted["query"] = m2.group(1).strip()
+
+    elif intent == Intent.NAVIGATION:
+        m = re.search(r"(.{1,20}?)(?:에서|부터)\s*(.{1,20}?)(?:까지|로|으로|에)\s*(?:가는 길|길찾기|경로)", text)
+        if m:
+            extracted["origin"] = m.group(1).strip()
+            extracted["destination"] = m.group(2).strip()
+        else:
+            m2 = re.search(r"(.{1,20}?)(?:까지|로|으로|에)\s*(?:가는 길|길찾기|경로|어떻게 가)", text)
+            if m2:
+                extracted["destination"] = m2.group(1).strip()
+
     return extracted
 
 

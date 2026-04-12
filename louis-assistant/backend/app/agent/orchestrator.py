@@ -35,6 +35,9 @@ from app.agent.tools.translate import translate_text
 from app.agent.tools.search import web_search
 from app.agent.tools.alarm import set_alarm, cancel_alarm, list_alarms
 from app.agent.tools.navigation import get_directions
+from app.agent.tools.communication import send_email, get_phone_intent, get_sms_intent
+from app.agent.tools.media import search_music, search_youtube
+from app.agent.tools.smart_home import control_smart_home
 
 log = logging.getLogger("louis.orchestrator")
 
@@ -84,6 +87,9 @@ class LouisAgent:
             translate_text,
             web_search,
             get_directions,
+            send_email, get_phone_intent, get_sms_intent,
+            search_music, search_youtube,
+            control_smart_home,
         ]
 
     def _build_agent(self, llm: ChatAnthropic):
