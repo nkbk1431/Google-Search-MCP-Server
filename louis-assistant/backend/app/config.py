@@ -75,6 +75,20 @@ class Settings(BaseSettings):
     # ── Redis ──────────────────────────────────────────────
     redis_url: str = "redis://localhost:6379/0"
 
+    # ── Phase 12: 교통 ────────────────────────────────────
+    srt_id: str = ""               # SRT 회원 아이디
+    srt_pw: str = ""               # SRT 비밀번호
+    korail_id: str = ""            # 코레일 멤버십 아이디
+    korail_pw: str = ""            # 코레일 멤버십 비밀번호
+    seoul_api_key: str = ""        # 서울 열린데이터광장 API 키
+
+    # ── Phase 12: 쇼핑 ────────────────────────────────────
+    naver_client_id: str = ""      # 네이버 개발자센터 클라이언트 ID
+    naver_client_secret: str = ""  # 네이버 개발자센터 시크릿
+
+    # ── Phase 12: 지도/주소 ───────────────────────────────
+    kakao_api_key: str = ""        # 카카오 REST API 키
+
     # ── 기타 ──────────────────────────────────────────────
     timezone: str = "Asia/Seoul"
     log_level: str = "INFO"

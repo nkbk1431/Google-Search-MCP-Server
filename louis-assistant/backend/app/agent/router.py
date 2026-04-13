@@ -22,7 +22,15 @@ class Intent(str, Enum):
     MEDIA = "media"
     NAVIGATION = "navigation"
     SMART_HOME = "smart_home"
-    GENERAL = "general"  # LLM으로 넘길 범용
+    # Phase 12 추가
+    TRAIN = "train"          # SRT/KTX 열차 조회
+    SUBWAY = "subway"        # 지하철 실시간 도착
+    SHOPPING = "shopping"    # 쇼핑 검색
+    SPORTS = "sports"        # KBO/K리그/LCK 경기
+    STOCK = "stock"          # 주식/코스피 조회
+    SPELLING = "spelling"    # 맞춤법 검사
+    POSTAL = "postal"        # 우편번호 검색
+    GENERAL = "general"      # LLM으로 넘길 범용
 
 
 @dataclass
@@ -85,6 +93,34 @@ _PATTERNS: list[tuple[Intent, list[str]]] = [
     (Intent.SEARCH, [
         "검색해", "찾아봐", "알려줘", "뭐야", "누구야", "어디야",
         "언제야", "얼마야",
+    ]),
+    # Phase 12 패턴
+    (Intent.TRAIN, [
+        "ktx", "srt", "무궁화", "새마을", "열차", "기차",
+        "승차권", "기차표", "열차표", "예매",
+    ]),
+    (Intent.SUBWAY, [
+        "지하철 도착", "지하철 언제", "몇 분 후", "실시간 도착",
+        "다음 열차", "막차", "첫차",
+    ]),
+    (Intent.SHOPPING, [
+        "쿠팡", "올리브영", "다이소", "배달", "주문해줘",
+        "쇼핑", "상품 검색", "가격 비교", "최저가", "중고",
+        "번개장터", "중고나라",
+    ]),
+    (Intent.SPORTS, [
+        "kbo", "야구", "k리그", "축구", "lck", "롤", "리그오브레전드",
+        "경기 결과", "경기 일정", "스코어", "승패",
+    ]),
+    (Intent.STOCK, [
+        "주가", "삼성전자", "카카오", "네이버 주식", "코스피",
+        "코스닥", "상장", "시가총액", "종가",
+    ]),
+    (Intent.SPELLING, [
+        "맞춤법", "틀린 글자", "교정", "문법 검사", "맞게 썼",
+    ]),
+    (Intent.POSTAL, [
+        "우편번호", "zip", "주소 검색", "배송 주소",
     ]),
 ]
 
@@ -189,6 +225,70 @@ def _extract_data(intent: Intent, text: str) -> dict:
             if m2:
                 extracted["destination"] = m2.group(1).strip()
 
+    # Phase 12 추출
+    elif intent == Intent.TRAIN:
+        m = re.search(r"(.{1,10}?)(?:에서|역에서|역)\s*(.{1,10}?)(?:까지|역까지|역)", text)
+        if m:
+            extracted["departure"] = m.group(1).strip()
+            extracted["arrival"] = m.group(2).strip()
+        if "srt" in text.lower():
+            extracted["train_type"] = "SRT"
+        elif "ktx" in text.lower():
+            extracted["train_type"] = "KTX"
+        m_date = re.search(r"(오늘|내일|모레|그제|어제)", text)
+        if m_date:
+            extracted["date"] = m_date.group(1)
+        m_time = re.search(r"(\d{1,2})시", text)
+        if m_time:
+            extracted["time"] = f"{int(m_time.group(1)):02d}00"
+
+    elif intent == Intent.SUBWAY:
+        m = re.search(r"(.{1,15}?)역", text)
+        if m:
+            extracted["station"] = m.group(1).strip()
+        m_line = re.search(r"(\d호선|[가-힣]+선)", text)
+        if m_line:
+            extracted["line"] = m_line.group(1)
+
+    elif intent == Intent.SHOPPING:
+        for platform in ["쿠팡", "올리브영", "다이소", "번개장터", "중고나라"]:
+            if platform in text:
+                extracted["platform"] = platform.lower()
+                break
+        m = re.search(r"(?:쿠팡|올리브영|다이소|쇼핑|검색|주문)?\s*(.{2,30}?)\s*(?:찾아줘|검색해|주문해|얼마야|가격)", text)
+        if m:
+            extracted["query"] = m.group(1).strip()
+        m_price = re.search(r"(\d[\d,]*)\s*원\s*이하", text)
+        if m_price:
+            extracted["max_price"] = int(m_price.group(1).replace(",", ""))
+
+    elif intent == Intent.SPORTS:
+        for league in ["kbo", "야구", "k리그", "축구", "lck", "롤"]:
+            if league in text.lower():
+                extracted["league"] = {"kbo": "kbo", "야구": "kbo",
+                                        "k리그": "kleague", "축구": "kleague",
+                                        "lck": "lck", "롤": "lck"}.get(league, "kbo")
+                break
+        m_date = re.search(r"(오늘|어제|내일)", text)
+        if m_date:
+            extracted["date"] = m_date.group(1)
+
+    elif intent == Intent.STOCK:
+        m = re.search(r"(.{2,15}?)\s*(?:주가|주식|종가|현재가)", text)
+        if m:
+            extracted["company"] = m.group(1).strip()
+
+    elif intent == Intent.SPELLING:
+        # 교정할 텍스트 추출 (따옴표나 큰따옴표 안)
+        m = re.search(r"[\"\'\"\'](.*?)[\"\'\"\']", text)
+        if m:
+            extracted["text"] = m.group(1)
+
+    elif intent == Intent.POSTAL:
+        m = re.search(r"(?:우편번호|주소)\s*[:\s]?\s*(.{5,50}?)(?:\s*우편번호|\s*zip|$)", text)
+        if m:
+            extracted["address"] = m.group(1).strip()
+
     return extracted
 
 
@@ -201,5 +301,18 @@ def _needs_llm(intent: Intent, text: str, extracted: dict) -> bool:
         return False
     # 환율 + 명확한 통화 → LLM 불필요
     if intent == Intent.FINANCE and extracted.get("currency"):
+        return False
+    # Phase 12: 구조화된 데이터가 충분하면 LLM 불필요
+    if intent == Intent.TRAIN and extracted.get("departure") and extracted.get("arrival"):
+        return False
+    if intent == Intent.SUBWAY and extracted.get("station"):
+        return False
+    if intent == Intent.SPORTS and extracted.get("league"):
+        return False
+    if intent == Intent.STOCK and extracted.get("company"):
+        return False
+    if intent == Intent.SPELLING and extracted.get("text"):
+        return False
+    if intent == Intent.POSTAL and extracted.get("address"):
         return False
     return True

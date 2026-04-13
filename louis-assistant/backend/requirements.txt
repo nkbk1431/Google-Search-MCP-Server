@@ -48,5 +48,11 @@ pytest-mock==3.14.0
 pytest-cov==6.1.0
 requests-mock==1.12.1
 
+# Phase 12: 한국 특화 도구
+pykrx==1.0.47           # KRX 주식 조회 (API 키 불필요)
+# srt-py                # SRT 예매 (선택, pip install srt-py)
+# korail2               # KTX 예매 (선택, pip install korail2)
+# py-hanspell           # 네이버 맞춤법 검사 (선택, pip install py-hanspell)
+
 # Monitoring
 sentry-sdk[fastapi]==2.25.1
