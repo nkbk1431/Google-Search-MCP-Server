@@ -40,15 +40,46 @@ case "$COMMAND" in
 
   secrets)
     echo ">>> Secret Manager에 API 키 등록..."
-    read -p "ANTHROPIC_API_KEY: " ANTHROPIC_KEY
-    echo -n "$ANTHROPIC_KEY" | gcloud secrets create anthropic-api-key --data-file=- 2>/dev/null || \
-    echo -n "$ANTHROPIC_KEY" | gcloud secrets versions add anthropic-api-key --data-file=-
 
-    read -p "OPENWEATHER_API_KEY: " WEATHER_KEY
-    echo -n "$WEATHER_KEY" | gcloud secrets create openweather-key --data-file=- 2>/dev/null || \
-    echo -n "$WEATHER_KEY" | gcloud secrets versions add openweather-key --data-file=-
+    _upsert_secret() {
+      local name=$1 value=$2
+      echo -n "$value" | gcloud secrets create "$name" --data-file=- 2>/dev/null || \
+      echo -n "$value" | gcloud secrets versions add "$name" --data-file=-
+    }
 
-    echo "Secret Manager 등록 완료."
+    # ── 필수 키 ────────────────────────────────────────────
+    read -p "ANTHROPIC_API_KEY: " v; _upsert_secret anthropic-api-key "$v"
+    read -p "APP_SECRET_KEY (JWT 서명, 32자+): " v; _upsert_secret louis-app-secret "$v"
+
+    # ── 날씨/검색 ──────────────────────────────────────────
+    read -p "OPENWEATHER_API_KEY [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret openweather-key "$v"
+
+    read -p "SERPER_API_KEY [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret serper-key "$v"
+
+    read -p "DEEPL_API_KEY [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret deepl-key "$v"
+
+    read -p "ELEVENLABS_API_KEY [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret elevenlabs-key "$v"
+
+    # ── Phase 12: 한국 특화 ─────────────────────────────────
+    read -p "NAVER_CLIENT_ID [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret naver-client-id "$v"
+
+    read -p "NAVER_CLIENT_SECRET [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret naver-client-secret "$v"
+
+    read -p "SEOUL_API_KEY (지하철 실시간) [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret seoul-api-key "$v"
+
+    read -p "KAKAO_API_KEY (주소검색) [skip=Enter]: " v
+    [[ -n "$v" ]] && _upsert_secret kakao-api-key "$v"
+
+    echo ""
+    echo "✅ Secret Manager 등록 완료."
+    echo "   gcloud secrets list 로 확인하세요."
     ;;
 
   *)

@@ -18,6 +18,7 @@ from app.db.session import init_db
 from app.api.chat import router as chat_router
 from app.api.auth import router as auth_router
 from app.api.webhook import router as webhook_router
+from app.api.google_oauth import router as google_oauth_router
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -65,6 +66,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["인증"])
 app.include_router(chat_router, prefix="/api/v1", tags=["채팅"])
 app.include_router(webhook_router, prefix="/api/v1/webhook", tags=["웹훅"])
+app.include_router(google_oauth_router, prefix="/api/v1/auth/google", tags=["Google 연동"])
 
 
 @app.get("/", tags=["상태"])

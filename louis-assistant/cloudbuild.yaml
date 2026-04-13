@@ -1,38 +1,54 @@
 # Google Cloud Build - Cloud Run 자동 배포
 # 사용법: gcloud builds submit --config cloudbuild.yaml
 # 필요 환경변수는 Secret Manager에서 관리
+#
+# 사전 준비:
+#   ./deploy.sh secrets  ← API 키를 Secret Manager에 등록
+#   gcloud iam service-accounts add-iam-policy-binding ...
+
+substitutions:
+  _REGION: asia-northeast3   # 서울 리전
+  _SERVICE: louis-api
+  _IMAGE: gcr.io/$PROJECT_ID/louis-api
 
 steps:
-  # 1. Docker 이미지 빌드
+  # 1. Docker 이미지 빌드 (캐시 활용)
   - name: "gcr.io/cloud-builders/docker"
+    id: build
     args:
       - build
+      - "--cache-from=gcr.io/$PROJECT_ID/louis-api:latest"
       - "-t"
       - "gcr.io/$PROJECT_ID/louis-api:$SHORT_SHA"
       - "-t"
       - "gcr.io/$PROJECT_ID/louis-api:latest"
-      - "./backend"
+      - "--label=commit=$SHORT_SHA"
+      - "--label=build=$BUILD_ID"
+      - "."
+    dir: "backend"
 
   # 2. 이미지 푸시
   - name: "gcr.io/cloud-builders/docker"
-    args:
-      - push
-      - "gcr.io/$PROJECT_ID/louis-api:$SHORT_SHA"
+    id: push-sha
+    waitFor: [build]
+    args: [push, "gcr.io/$PROJECT_ID/louis-api:$SHORT_SHA"]
 
   - name: "gcr.io/cloud-builders/docker"
-    args:
-      - push
-      - "gcr.io/$PROJECT_ID/louis-api:latest"
+    id: push-latest
+    waitFor: [build]
+    args: [push, "gcr.io/$PROJECT_ID/louis-api:latest"]
 
   # 3. Cloud Run 배포
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: deploy
+    waitFor: [push-sha]
     entrypoint: gcloud
     args:
       - run
       - deploy
-      - louis-api
+      - $_SERVICE
       - "--image=gcr.io/$PROJECT_ID/louis-api:$SHORT_SHA"
-      - "--region=asia-northeast3"           # 서울
+      - "--region=$_REGION"
       - "--platform=managed"
       - "--allow-unauthenticated"
       - "--memory=512Mi"
@@ -41,8 +57,21 @@ steps:
       - "--max-instances=10"
       - "--concurrency=80"
       - "--timeout=60s"
-      - "--set-env-vars=APP_ENV=production"
-      - "--set-secrets=ANTHROPIC_API_KEY=anthropic-api-key:latest,OPENWEATHER_API_KEY=openweather-key:latest"
+      # 환경변수
+      - "--set-env-vars=APP_ENV=production,TIMEZONE=Asia/Seoul"
+      # Secret Manager에서 주입 (Phase 1~12 모든 키)
+      - >-
+        --set-secrets=
+        ANTHROPIC_API_KEY=anthropic-api-key:latest,
+        APP_SECRET_KEY=louis-app-secret:latest,
+        OPENWEATHER_API_KEY=openweather-key:latest,
+        SERPER_API_KEY=serper-key:latest,
+        DEEPL_API_KEY=deepl-key:latest,
+        ELEVENLABS_API_KEY=elevenlabs-key:latest,
+        NAVER_CLIENT_ID=naver-client-id:latest,
+        NAVER_CLIENT_SECRET=naver-client-secret:latest,
+        SEOUL_API_KEY=seoul-api-key:latest,
+        KAKAO_API_KEY=kakao-api-key:latest
 
 images:
   - "gcr.io/$PROJECT_ID/louis-api:$SHORT_SHA"
@@ -51,3 +80,4 @@ images:
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: "E2_HIGHCPU_8"
+  dynamic_substitutions: true

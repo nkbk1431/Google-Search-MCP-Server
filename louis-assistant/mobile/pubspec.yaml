@@ -47,6 +47,9 @@ dependencies:
   # 네트워크 상태 감지
   connectivity_plus: ^6.0.3
 
+  # 브라우저/외부 앱 열기 (Phase 12: 쇼핑, 스포츠, 기차 결과)
+  url_launcher: ^6.3.0
+
   # 타임존 (예약 알림용)
   flutter_timezone: ^1.0.8
   timezone: ^0.9.4

@@ -160,6 +160,20 @@ class MainActivity : FlutterActivity() {
                         }
                     }
 
+                    // ── 브라우저 열기 (Phase 12: 쇼핑/스포츠/기차) ──
+                    "openBrowser" -> {
+                        val url = call.argument<String>("url") ?: ""
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("UNAVAILABLE", "브라우저를 열 수 없어요: ${e.message}", null)
+                        }
+                    }
+
                     // ── 위젯 리마인더 텍스트 업데이트 ───────────────────────────
                     "updateWidgetReminder" -> {
                         val text = call.argument<String>("text") ?: "예정된 리마인더가 없어요"
