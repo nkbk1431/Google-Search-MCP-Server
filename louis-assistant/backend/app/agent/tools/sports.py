@@ -115,7 +115,7 @@ def get_kbo_results(date: str = "오늘", team: str = "") -> str:
             games.append({
                 "home_team": home,
                 "away_team": away,
-                "score": f"{away_score} : {home_score}" if home_score != "" else "예정",
+                "score": f"{home_score} : {away_score}" if home_score != "" else "예정",
                 "status": status,
                 "stadium": g.get("stadium", ""),
                 "start_time": g.get("gameStartTime", ""),
@@ -190,7 +190,7 @@ def get_kleague_results(date: str = "오늘", team: str = "") -> str:
             games.append({
                 "home_team": home,
                 "away_team": away,
-                "score": f"{g.get('awayTeamScore', '')} : {g.get('homeTeamScore', '')}"
+                "score": f"{g.get('homeTeamScore', '')} : {g.get('awayTeamScore', '')}"
                          if g.get("homeTeamScore", "") != "" else "예정",
                 "status": g.get("gameStatusCd", ""),
                 "stadium": g.get("stadium", ""),
@@ -256,7 +256,7 @@ def get_lck_results(date: str = "오늘") -> str:
             games.append({
                 "home_team": g.get("homeTeamName", ""),
                 "away_team": g.get("awayTeamName", ""),
-                "score": f"{g.get('awayTeamScore', '')} : {g.get('homeTeamScore', '')}"
+                "score": f"{g.get('homeTeamScore', '')} : {g.get('awayTeamScore', '')}"
                          if g.get("homeTeamScore", "") != "" else "예정",
                 "status": g.get("gameStatusCd", ""),
                 "start_time": g.get("gameStartTime", ""),

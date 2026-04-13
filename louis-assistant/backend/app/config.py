@@ -88,6 +88,7 @@ class Settings(BaseSettings):
 
     # ── Phase 12: 지도/주소 ───────────────────────────────
     kakao_api_key: str = ""        # 카카오 REST API 키
+    juso_api_key: str = ""         # 도로명주소 개발자센터 API 키 (행안부)
 
     # ── 기타 ──────────────────────────────────────────────
     timezone: str = "Asia/Seoul"

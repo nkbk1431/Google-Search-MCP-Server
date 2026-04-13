@@ -144,8 +144,9 @@ async def google_oauth_callback(
             redirect_uri=redirect_uri,
             state=state,
         )
-        # HTTPS 리다이렉트 URI 환경 (개발용 HTTP 허용)
-        os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
+        # 개발 환경에서만 HTTP 허용 (프로덕션에서는 HTTPS 강제)
+        if not settings.is_production:
+            os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
         flow.fetch_token(code=code)
         creds = flow.credentials
 

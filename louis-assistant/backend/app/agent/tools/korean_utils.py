@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 import requests
 from langchain_core.tools import tool
 
+from app.config import settings
+
 log = logging.getLogger("louis.tools.korean_utils")
 
 
@@ -224,15 +226,14 @@ def search_postal_code(address: str) -> str:
     Returns:
         JSON 문자열 — 주소 목록 (road_address, jibun_address, zip_code)
     """
-    kakao_key = getattr(__import__("app.config", fromlist=["settings"]), "settings").kakao_api_key \
-        if hasattr(__import__("app.config", fromlist=["settings"]).settings, "kakao_api_key") else None
+    kakao_key = getattr(settings, "kakao_api_key", None)
 
     if not kakao_key:
         # 도로명주소 개발자센터 무료 API 폴백
         try:
             url = "https://business.juso.go.kr/addrlink/addrLinkApi.do"
             params = {
-                "confmKey": "devU01TX0FVVEgyMDI1MDQxMzE2NTkxOTExNTI2ODk=",  # 테스트 키
+                "confmKey": getattr(settings, "juso_api_key", ""),
                 "currentPage": 1,
                 "countPerPage": 5,
                 "keyword": address,
@@ -269,9 +270,9 @@ def search_postal_code(address: str) -> str:
         for d in documents:
             road = d.get("road_address")
             result.append({
-                "road_address": road["address_name"] if road else "",
+                "road_address": road.get("address_name", "") if road else "",
                 "jibun_address": d.get("address", {}).get("address_name", ""),
-                "zip_code": road["zone_no"] if road else "",
+                "zip_code": road.get("zone_no", "") if road else "",
                 "building_name": road.get("building_name", "") if road else "",
             })
 
