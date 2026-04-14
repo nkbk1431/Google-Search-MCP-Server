@@ -2,14 +2,70 @@
 
 스마트폰에서 "루이스"라는 웨이크워드로 호출하는 AI 개인비서 앱.
 
-- **백엔드**: Python 3.13 + FastAPI + LangGraph (Cloud Run 배포)
+- **백엔드**: Python 3.12 + FastAPI + LangGraph (Cloud Run 배포)
 - **모바일**: Flutter (Android 우선, iOS 차후)
 - **AI**: Claude Haiku 4.5 (기본) / Claude Sonnet 4.6 (복잡 작업)
 - **현재**: Phase 15 완료 — 프로덕션 배포 준비 완료
 
+> Python 버전: **3.12 권장** (3.13은 pvporcupine·pyaudio 등 네이티브 라이브러리 미검증)
+
+---
+
 ## 빠른 시작
 
-### 1. API 키 발급
+### Windows (PowerShell + Miniconda)
+
+```powershell
+# 1. Miniconda 설치 후 Python 3.12 환경 생성
+conda create -n louis python=3.12 -y
+conda activate louis
+
+# 2. 저장소 클론
+git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
+cd LOUIS_APP
+
+# 3. 의존성 설치 (conda-forge로 바이너리 먼저 설치)
+conda install -c conda-forge numpy lxml -y
+pip install -r backend\requirements.txt
+
+# 4. 환경변수 설정
+Copy-Item backend\.env.example backend\.env
+notepad backend\.env   # API 키 입력
+
+# 5. 백엔드 실행
+cd backend
+.\quick_start.ps1
+# → http://localhost:8000/docs 에서 Swagger UI 확인
+```
+
+> 자세한 Windows 가이드: [`docs/windows_setup.md`](docs/windows_setup.md)
+
+### Linux (Ubuntu / bash)
+
+```bash
+# 1. Miniconda 설치 후 Python 3.12 환경 생성
+conda create -n louis python=3.12 -y
+conda activate louis
+
+# 2. 저장소 클론
+git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
+cd LOUIS_APP
+
+# 3. 백엔드 실행 (의존성 자동 설치 + IP 안내 포함)
+cd backend
+bash quick_start.sh
+# → 스마트폰 접속 URL이 출력됩니다
+```
+
+### Conda 환경 한 번에 구성 (Windows/Linux 공통)
+
+```bash
+# 프로젝트 루트에서
+conda env create -f environment.yml
+conda activate louis
+```
+
+---
 
 | API | 발급처 | 필수 여부 |
 |-----|--------|----------|
@@ -22,33 +78,7 @@
 | Kakao Developers | https://developers.kakao.com | 선택 (주소 검색) |
 | 서울 열린데이터광장 | https://data.seoul.go.kr | 선택 (지하철) |
 
-### 2. 백엔드 실행
-
-```bash
-cd backend
-
-# 패키지 설치
-pip install -r requirements.txt
-
-# 환경변수 설정
-cp .env.example .env
-# .env 파일에 API 키 입력
-
-# 로컬 개발 서버
-uvicorn app.main:app --reload --port 8000
-# → http://localhost:8000/docs 에서 Swagger UI 확인
-```
-
-또는 deploy.sh 스크립트 사용:
-
-```bash
-cd ..
-./deploy.sh dev      # 로컬 uvicorn
-./deploy.sh docker   # Docker Compose
-./deploy.sh test     # pytest
-./deploy.sh gcloud   # Google Cloud Run 배포
-./deploy.sh secrets  # Secret Manager에 API 키 등록
-```
+### API 키 발급
 
 ### 3. Google Calendar / Gmail 연동
 
@@ -66,21 +96,44 @@ curl -H "Authorization: Bearer <JWT>" \
 # 4. 자동으로 콜백 처리 → tokens/ 에 토큰 저장
 ```
 
-### 4. 테스트 실행
+### 스마트폰 테스트 (APK 빌드)
 
+**Windows:**
+```powershell
+cd mobile
+.\build_test_apk.ps1 192.168.0.10   # 백엔드 PC IP 입력
+```
+
+**Linux:**
 ```bash
+cd mobile
+bash build_test_apk.sh 192.168.0.10
+```
+
+### 테스트 실행
+
+**Windows:**
+```powershell
+conda activate louis
 cd backend
 pytest tests/ -v --tb=short
 ```
 
-### 5. Cloud Run 배포
+**Linux:**
+```bash
+conda activate louis
+cd backend
+pytest tests/ -v --tb=short
+```
+
+### deploy.sh 스크립트 (Linux / Cloud 배포)
 
 ```bash
-# API 키를 Secret Manager에 등록 (최초 1회)
-./deploy.sh secrets
-
-# Cloud Build로 자동 빌드 및 배포
-./deploy.sh gcloud
+./deploy.sh dev      # 로컬 uvicorn
+./deploy.sh docker   # Docker Compose
+./deploy.sh test     # pytest
+./deploy.sh gcloud   # Google Cloud Run 배포
+./deploy.sh secrets  # Secret Manager에 API 키 등록
 ```
 
 ## 주요 기능
@@ -213,13 +266,24 @@ louis-assistant/
 |------|------|
 | AI | Claude Haiku 4.5 / Sonnet 4.6 (Anthropic) |
 | Agent 프레임워크 | LangGraph ReAct + MemorySaver |
-| 백엔드 | FastAPI + SQLAlchemy + APScheduler |
+| 백엔드 | Python 3.12 + FastAPI + SQLAlchemy + APScheduler |
 | 인증 | JWT (HS256) + Google OAuth 2.0 |
+| 개발 환경 | Miniconda (Windows/Linux 공통) + Python 3.12 |
 | 캐시 | Redis (선택) / 인메모리 폴백 |
 | 배포 | Google Cloud Run (서울 asia-northeast3) |
 | CI/CD | GitHub Actions + Cloud Build |
 | 모바일 | Flutter + Riverpod + MethodChannel |
 | 주식 데이터 | pykrx (KRX 무료, API 키 불필요) |
+
+## OS별 개발 환경 차이
+
+| 항목 | Windows | Linux (Ubuntu) |
+|------|---------|---------------|
+| 환경 관리 | `conda activate louis` | `conda activate louis` |
+| 백엔드 시작 | `.\quick_start.ps1` | `bash quick_start.sh` |
+| APK 빌드 | `.\build_test_apk.ps1 IP` | `bash build_test_apk.sh IP` |
+| 방화벽 | PowerShell 스크립트 자동 설정 | `sudo ufw allow 8000` |
+| 상세 가이드 | [`docs/windows_setup.md`](docs/windows_setup.md) | `test_on_phone.sh` 참고 |
 
 ## 보안
 
