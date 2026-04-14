@@ -2,8 +2,13 @@
 class AppConstants {
   AppConstants._();
 
-  // API 설정 (실제 URL로 교체)
-  static const String apiBaseUrl = 'https://your-cloudrun-url.run.app';
+  // API 설정
+  // 빌드 시 --dart-define=BASE_URL=http://192.168.x.x:8000 으로 주입 가능
+  // 미지정 시 설정 화면에서 직접 입력 (권장)
+  static const String apiBaseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'http://10.0.2.2:8000', // Android 에뮬레이터 기본값 (localhost)
+  );
   static const String apiVersion = 'v1';
 
   // 웨이크워드 파일 경로 (assets/)

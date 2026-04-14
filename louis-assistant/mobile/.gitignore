@@ -1,0 +1,15 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+
+# Android 실제 Firebase 설정 (git에 올리지 마세요 — 플레이스홀더만 커밋)
+# android/app/google-services.json  ← 플레이스홀더는 의도적으로 포함
+android/app/src/main/assets/flutter_assets/
+
+# iOS
+ios/Runner/GoogleService-Info.plist
+ios/.symlinks/
+ios/Pods/
