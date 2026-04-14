@@ -2,20 +2,25 @@
 
 스마트폰에서 "루이스"라는 웨이크워드로 호출하는 AI 개인비서 앱.
 
-- **백엔드**: Python 3.11 + FastAPI + LangGraph
+- **백엔드**: Python 3.13 + FastAPI + LangGraph (Cloud Run 배포)
 - **모바일**: Flutter (Android 우선, iOS 차후)
 - **AI**: Claude Haiku 4.5 (기본) / Claude Sonnet 4.6 (복잡 작업)
+- **현재**: Phase 15 완료 — 프로덕션 배포 준비 완료
 
 ## 빠른 시작
 
-### 1. API 키 발급 (필수)
+### 1. API 키 발급
 
-| API | 발급처 | 용도 |
-|-----|--------|------|
-| Anthropic Claude | https://console.anthropic.com | LLM 두뇌 |
-| Picovoice | https://console.picovoice.ai | 웨이크워드 |
-| OpenWeatherMap | https://openweathermap.org/api | 날씨 |
-| Google Cloud | https://console.cloud.google.com | 캘린더, Gmail |
+| API | 발급처 | 필수 여부 |
+|-----|--------|----------|
+| Anthropic Claude | https://console.anthropic.com | **필수** |
+| Google Cloud (OAuth) | https://console.cloud.google.com | **필수** (캘린더·Gmail) |
+| OpenWeatherMap | https://openweathermap.org/api | 권장 |
+| Serper.dev | https://serper.dev | 권장 (웹 검색) |
+| DeepL | https://www.deepl.com/pro-api | 선택 |
+| Naver Developers | https://developers.naver.com | 선택 (쇼핑 검색) |
+| Kakao Developers | https://developers.kakao.com | 선택 (주소 검색) |
+| 서울 열린데이터광장 | https://data.seoul.go.kr | 선택 (지하철) |
 
 ### 2. 백엔드 실행
 
@@ -27,95 +32,178 @@ pip install -r requirements.txt
 
 # 환경변수 설정
 cp .env.example .env
-# .env 파일에 발급받은 API 키 입력
+# .env 파일에 API 키 입력
 
-# 서버 실행
-python -m app.main
+# 로컬 개발 서버
+uvicorn app.main:app --reload --port 8000
 # → http://localhost:8000/docs 에서 Swagger UI 확인
 ```
 
-### 3. 프로토타입 테스트 (Windows)
+또는 deploy.sh 스크립트 사용:
 
 ```bash
-# 추가 패키지 설치
-pip install pvporcupine pvrecorder SpeechRecognition pyttsx3
+cd ..
+./deploy.sh dev      # 로컬 uvicorn
+./deploy.sh docker   # Docker Compose
+./deploy.sh test     # pytest
+./deploy.sh gcloud   # Google Cloud Run 배포
+./deploy.sh secrets  # Secret Manager에 API 키 등록
+```
 
-# 텍스트 모드로 실행 (마이크/스피커 없어도 테스트 가능)
-python louis_prototype.py --text
+### 3. Google Calendar / Gmail 연동
 
-# 음성 모드로 실행
-python louis_prototype.py
+Cloud Run 같은 headless 환경에서도 동작하는 웹 OAuth 플로우:
+
+```bash
+# 1. Google Cloud Console에서 OAuth 클라이언트 ID 발급
+#    → backend/credentials.json 으로 저장
+
+# 2. 서버 실행 후 인증 시작
+curl -H "Authorization: Bearer <JWT>" \
+  http://localhost:8000/api/v1/auth/google/init
+
+# 3. 반환된 auth_url을 브라우저에서 열어 Google 로그인
+# 4. 자동으로 콜백 처리 → tokens/ 에 토큰 저장
 ```
 
 ### 4. 테스트 실행
 
 ```bash
 cd backend
-pytest tests/ -v
+pytest tests/ -v --tb=short
+```
+
+### 5. Cloud Run 배포
+
+```bash
+# API 키를 Secret Manager에 등록 (최초 1회)
+./deploy.sh secrets
+
+# Cloud Build로 자동 빌드 및 배포
+./deploy.sh gcloud
 ```
 
 ## 주요 기능
 
-| 기능 | 예시 발화 | 사용 API |
-|------|----------|---------|
-| 날씨 조회 | "오늘 날씨 어때?" | OpenWeatherMap |
-| 옷차림 추천 | "오늘 뭐 입을까?" | 규칙 기반 |
-| 일정 추가 | "내일 3시 치과 예약 추가해줘" | Google Calendar |
-| 리마인더 | "30분 뒤 빨래 알려줘" | APScheduler |
-| 할일 관리 | "장보기 목록에 우유 추가" | SQLite |
-| 메모 | "아이디어 메모해줘" | SQLite |
-| 환율 변환 | "100달러 얼마야?" | open.er-api.com |
-| 번역 | "안녕을 영어로 뭐야?" | DeepL |
-| 웹 검색 | "최신 뉴스 알려줘" | Serper.dev |
+### 기본 기능 (Phase 1~11)
+
+| 기능 | 예시 발화 |
+|------|----------|
+| 날씨 조회 | "오늘 날씨 어때?" |
+| 옷차림 추천 | "오늘 뭐 입을까?" |
+| 일정 추가 | "내일 3시 치과 예약 추가해줘" |
+| 리마인더 | "30분 뒤 빨래 알려줘" |
+| 할일 관리 | "장보기 목록에 우유 추가" |
+| 메모 | "아이디어 메모해줘" |
+| 환율 변환 | "100달러 얼마야?" |
+| 번역 | "안녕을 영어로 뭐야?" |
+| 웹 검색 | "최신 뉴스 알려줘" |
+| 스마트홈 | "거실 불 꺼줘" |
+| 음악 재생 | "좋아하는 노래 틀어줘" |
+
+### 한국 특화 기능 (Phase 12)
+
+| 기능 | 예시 발화 |
+|------|----------|
+| SRT 열차 조회 | "서울-부산 SRT 내일 오전 표 있어?" |
+| KTX 열차 조회 | "KTX 대전 가는 거 알아봐줘" |
+| 서울 지하철 실시간 | "강남역 2호선 다음 열차 언제야?" |
+| 네이버 쇼핑 검색 | "에어팟 최저가 찾아줘" |
+| 중고 마켓 | "아이패드 중고 번개장터에서 찾아줘" |
+| KBO 야구 경기 | "오늘 두산 경기 결과 어때?" |
+| K리그 축구 | "전북 어제 경기 몇 대 몇이야?" |
+| LCK e스포츠 | "오늘 LCK 경기 있어?" |
+| 맞춤법 검사 | "이 문장 맞춤법 틀린 거 있어?" |
+| 주가 조회 | "삼성전자 주가 얼마야?" |
+| 코스피/코스닥 | "오늘 코스피 어때?" |
+| 우편번호 검색 | "강남구 테헤란로 152 우편번호 알려줘" |
 
 ## 프로젝트 구조
 
 ```
 louis-assistant/
-├── backend/                  # FastAPI 서버
+├── backend/                        # FastAPI 서버 (Cloud Run 배포)
 │   ├── app/
-│   │   ├── main.py           # 엔트리 포인트
-│   │   ├── config.py         # 환경변수
+│   │   ├── main.py                 # 엔트리 포인트
+│   │   ├── config.py               # 환경변수 (pydantic-settings)
 │   │   ├── agent/
-│   │   │   ├── orchestrator.py  # LangGraph Agent
-│   │   │   ├── prompts.py       # 시스템 프롬프트
-│   │   │   ├── router.py        # 의도 분류
-│   │   │   └── tools/           # 각 기능별 도구
-│   │   ├── api/              # FastAPI 라우터
-│   │   ├── db/               # SQLAlchemy 모델
-│   │   └── services/         # Google OAuth, 캐시
-│   └── tests/
-├── mobile/                   # Flutter 앱
-│   └── lib/
-│       ├── core/services/    # 음성 파이프라인
-│       └── features/         # 화면별 기능
-├── docs/                     # 문서
-│   ├── architecture.md
-│   ├── prompts.md
-│   └── api.md
-└── louis_prototype.py        # Windows 프로토타입
+│   │   │   ├── orchestrator.py     # LangGraph ReAct Agent
+│   │   │   ├── prompts.py          # 시스템 프롬프트
+│   │   │   ├── router.py           # 의도 분류 (22개 Intent)
+│   │   │   └── tools/              # 기능별 도구 (18개 파일)
+│   │   │       ├── weather.py      # 날씨
+│   │   │       ├── calendar.py     # Google Calendar
+│   │   │       ├── transport.py    # SRT/KTX/지하철
+│   │   │       ├── shopping.py     # 쇼핑/중고마켓
+│   │   │       ├── sports.py       # KBO/K리그/LCK
+│   │   │       ├── korean_utils.py # 맞춤법/주가/우편번호
+│   │   │       └── ...
+│   │   ├── api/
+│   │   │   ├── auth.py             # JWT 인증
+│   │   │   ├── chat.py             # 채팅 API
+│   │   │   ├── google_oauth.py     # Google OAuth 웹 플로우
+│   │   │   └── webhook.py          # FCM 웹훅
+│   │   ├── db/                     # SQLAlchemy 모델
+│   │   └── services/               # 개인화, 캐시, TTS, FCM
+│   ├── tests/                      # pytest (80+ 테스트)
+│   ├── Dockerfile                  # Python 3.13-slim, 비루트 실행
+│   └── requirements.txt
+├── mobile/                         # Flutter 앱 (Android)
+│   ├── lib/
+│   │   ├── core/services/
+│   │   │   ├── platform_channel.dart  # 네이티브 브리지
+│   │   │   └── voice_pipeline.dart    # 음성 파이프라인
+│   │   └── features/               # 화면별 기능
+│   └── android/
+├── docs/
+│   ├── architecture.md             # 전체 아키텍처 문서
+│   ├── api.md                      # API 레퍼런스
+│   └── prompts.md                  # 프롬프트 설계
+├── cloudbuild.yaml                 # Google Cloud Build CI/CD
+├── deploy.sh                       # 배포 헬퍼 스크립트
+└── docker-compose.yml              # 로컬 Docker 실행
 ```
 
-## 개발 로드맵
+## 개발 현황
 
-- **Phase 1** (Week 1-2): Agent 핵심 로직 ← *현재*
-- **Phase 2** (Week 3-4): FastAPI 백엔드 + Cloud Run 배포
-- **Phase 3** (Week 5-8): Flutter 모바일 앱
-- **Phase 4** (Week 9-10): 고급 기능 (위치 기반, 스마트홈)
-- **Phase 5** (Week 11-12): Play Store / App Store 출시
+| Phase | 내용 | 상태 |
+|-------|------|------|
+| Phase 1~3 | Agent 핵심, FastAPI 백엔드, Flutter 기반 | ✅ 완료 |
+| Phase 4~6 | Google 연동, 스마트홈, 미디어 | ✅ 완료 |
+| Phase 7~9 | 개인화, 비용 관리, FCM 푸시 | ✅ 완료 |
+| Phase 10~11 | 테스트 완성, CI/CD, 아키텍처 문서 | ✅ 완료 |
+| Phase 12 | 한국 특화 도구 12종 | ✅ 완료 |
+| Phase 13 | Flutter 빌드 준비 (url_launcher, 권한) | ✅ 완료 |
+| Phase 14 | Google OAuth 웹 플로우 (headless) | ✅ 완료 |
+| Phase 15 | Cloud Run 프로덕션 배포 | ✅ 완료 |
 
-## 비용 예상
+## 기술 스택
 
-1일 50회 대화 기준 (Claude Haiku):
-- 약 $0.5~1 / 월 / 사용자
-- 유료 플랜 ₩4,900/월 설정 시 건전한 마진
+| 영역 | 기술 |
+|------|------|
+| AI | Claude Haiku 4.5 / Sonnet 4.6 (Anthropic) |
+| Agent 프레임워크 | LangGraph ReAct + MemorySaver |
+| 백엔드 | FastAPI + SQLAlchemy + APScheduler |
+| 인증 | JWT (HS256) + Google OAuth 2.0 |
+| 캐시 | Redis (선택) / 인메모리 폴백 |
+| 배포 | Google Cloud Run (서울 asia-northeast3) |
+| CI/CD | GitHub Actions + Cloud Build |
+| 모바일 | Flutter + Riverpod + MethodChannel |
+| 주식 데이터 | pykrx (KRX 무료, API 키 불필요) |
 
 ## 보안
 
-- API 키는 백엔드에만 존재 (앱에 하드코딩 금지)
+- API 키는 백엔드 Secret Manager에만 존재 (앱 하드코딩 금지)
 - 앱 ↔ 백엔드: JWT 인증 + HTTPS
-- 웨이크워드는 온디바이스 처리 (서버 전송 없음)
-- 음성 데이터 30일 후 자동 삭제
+- 웨이크워드 온디바이스 처리 (음성 서버 전송 없음)
+- Cloud Run 비루트 사용자 실행
+- 프로덕션 환경에서 Swagger UI 비활성화
+
+## 비용 예상
+
+1일 50회 대화 기준 (Claude Haiku 4.5):
+- 약 $0.5~1 / 월 / 사용자
+- Cloud Run 최소 인스턴스 0 설정 시 유휴 비용 없음
 
 ## 라이선스
 
