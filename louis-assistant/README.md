@@ -2,12 +2,12 @@
 
 스마트폰에서 "루이스"라는 웨이크워드로 호출하는 AI 개인비서 앱.
 
-- **백엔드**: Python 3.12 + FastAPI + LangGraph (Cloud Run 배포)
+- **백엔드**: Python 3.13.12 + FastAPI + LangGraph (Cloud Run 배포)
 - **모바일**: Flutter (Android 우선, iOS 차후)
 - **AI**: Claude Haiku 4.5 (기본) / Claude Sonnet 4.6 (복잡 작업)
 - **현재**: Phase 15 완료 — 프로덕션 배포 준비 완료
 
-> Python 버전: **3.12 권장** (3.13은 pvporcupine·pyaudio 등 네이티브 라이브러리 미검증)
+> Python 버전: **3.13.12** 사용 (`bcrypt==4.3.0` + `passlib==1.7.4` 분리로 3.13 호환성 해결)
 
 ---
 
@@ -16,8 +16,8 @@
 ### Windows (PowerShell + Miniconda)
 
 ```powershell
-# 1. Miniconda 설치 후 Python 3.12 환경 생성
-conda create -n louis python=3.12 -y
+# 1. Miniconda 설치 후 Python 3.13.12 환경 생성
+conda create -n louis python=3.13.12 -y
 conda activate louis
 
 # 2. 저장소 클론
@@ -43,8 +43,8 @@ cd backend
 ### Linux (Ubuntu / bash)
 
 ```bash
-# 1. Miniconda 설치 후 Python 3.12 환경 생성
-conda create -n louis python=3.12 -y
+# 1. Miniconda 설치 후 Python 3.13.12 환경 생성
+conda create -n louis python=3.13.12 -y
 conda activate louis
 
 # 2. 저장소 클론
@@ -266,9 +266,9 @@ louis-assistant/
 |------|------|
 | AI | Claude Haiku 4.5 / Sonnet 4.6 (Anthropic) |
 | Agent 프레임워크 | LangGraph ReAct + MemorySaver |
-| 백엔드 | Python 3.12 + FastAPI + SQLAlchemy + APScheduler |
+| 백엔드 | Python 3.13.12 + FastAPI + SQLAlchemy + APScheduler |
 | 인증 | JWT (HS256) + Google OAuth 2.0 |
-| 개발 환경 | Miniconda (Windows/Linux 공통) + Python 3.12 |
+| 개발 환경 | Miniconda (Windows/Linux 공통) + Python 3.13.12 |
 | 캐시 | Redis (선택) / 인메모리 폴백 |
 | 배포 | Google Cloud Run (서울 asia-northeast3) |
 | CI/CD | GitHub Actions + Cloud Build |

@@ -1,6 +1,6 @@
 # 루이스(Louis) 개인비서 - Windows 개발 환경 설정 가이드
 
-Windows PC에서 Miniconda + Python 3.12 기준으로 백엔드를 실행하고,
+Windows PC에서 Miniconda + Python 3.13.12 기준으로 백엔드를 실행하고,
 Flutter로 Android 앱을 빌드하는 전체 과정을 설명합니다.
 
 ---
@@ -22,18 +22,18 @@ Flutter로 Android 앱을 빌드하는 전체 과정을 설명합니다.
 
 ## 1. Python 버전 선택
 
-**Python 3.12를 사용합니다 (3.13 아님).**
+**Python 3.13.12를 사용합니다.**
 
-| 항목 | 3.13 | 3.12 | 이유 |
-|------|------|------|------|
-| pvporcupine (웨이크워드) | 미검증 | ✅ | CPython 3.12 빌드 기준 |
-| pykrx (주식) | 미검증 | ✅ | numpy 의존성 |
-| LangChain / LangGraph | ✅ | ✅ | 공식 지원 |
-| passlib / bcrypt | 주의 (`crypt` 모듈 제거) | ✅ | 3.13에서 별도 처리 필요 |
+| 항목 | 3.13.12 | 비고 |
+|------|---------|------|
+| LangChain / LangGraph | ✅ | 공식 지원 |
+| FastAPI / Pydantic | ✅ | 공식 지원 |
+| pykrx (주식) | ✅ | numpy 3.13 호환 |
+| passlib / bcrypt | ✅ | `bcrypt==4.3.0` + `passlib==1.7.4` 분리로 해결 |
+| pvporcupine (웨이크워드) | ✅ | Python 3.x 지원 |
 
-> Python 3.13은 `crypt` 모듈이 제거되어 일부 인증 라이브러리가 오작동합니다.
-> 이 프로젝트는 `bcrypt==4.3.0` + `passlib==1.7.4`로 3.13 이슈를 해결했지만,
-> 다른 의존성 라이브러리까지 보장되지 않으므로 **3.12 권장**입니다.
+> Python 3.13에서 `crypt` 표준 모듈이 제거됐지만, 이 프로젝트는
+> `bcrypt==4.3.0` + `passlib==1.7.4`를 별도 설치해 호환성 문제를 해결했습니다.
 
 ---
 
@@ -70,14 +70,14 @@ conda --version
 
 ```powershell
 # Python 3.12 환경 생성
-conda create -n louis python=3.12 -y
+conda create -n louis python=3.13.12 -y
 
 # 환경 활성화
 conda activate louis
 
 # 확인
 python --version
-# Python 3.12.x 출력
+# Python 3.13.12 출력
 ```
 
 > **매번 conda activate louis를 치기 싫다면:**
