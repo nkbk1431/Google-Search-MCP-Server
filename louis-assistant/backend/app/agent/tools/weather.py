@@ -114,46 +114,64 @@ def get_weather(city: str = "Seoul") -> str:
 
 
 def _build_outfit_advice(w: dict) -> str:
-    """날씨 dict에서 옷차림 추천 문장을 생성합니다 (내부 헬퍼)."""
+    """날씨 dict에서 옷차림 추천 문장을 생성합니다 (내부 헬퍼).
+
+    기온 구간별 상·하의 조합으로 안내하며, 비/바람/일교차 부가 정보를 추가합니다.
+    """
     t_max = w.get("temp_max", 20)
     t_min = w.get("temp_min", 10)
-    diff = t_max - t_min
     condition = w.get("condition", "")
     wind = w.get("wind_speed", 0)
 
-    # 아침·저녁 체감 기준은 t_min, 낮 기준은 t_max
-    # → 둘 다 고려해서 레이어링 필요 여부 결정
+    # ── 기온 구간별 코디 조합 ────────────────────────────────
+    # t_max 기준으로 낮 최고 기온에 맞는 코디를 먼저 잡고,
+    # t_min이 낮으면 아침저녁 레이어링 조언을 추가합니다.
+
     if t_max >= 28:
-        top = "반팔이나 민소매"
+        # 한여름
+        base = "반팔이나 민소매에 얇은 면 하의를 입으세요."
     elif t_max >= 23:
-        top = "반팔"
+        # 초여름·늦여름
+        base = "반팔을 입으세요."
     elif t_max >= 20:
-        top = "긴팔 티셔츠나 얇은 셔츠"
-    elif t_max >= 17:
-        top = "얇은 가디건이나 맨투맨"
-    elif t_max >= 12:
-        top = "자켓이나 후드티"
+        # 봄·가을 초입, 낮엔 따뜻함
+        base = "반팔에 얇은 가디건이나 셔츠를 걸치면 좋아요."
+    elif t_max >= 13:
+        # 봄·가을 대표 구간 — 반팔 + 아우터
+        base = "반팔에 자켓이나 바람막이 같은 아우터를 입으세요."
     elif t_max >= 9:
-        top = "트렌치코트나 야상"
+        # 초봄·늦가을
+        base = "긴팔에 두꺼운 자켓이나 야상을 입으세요."
     elif t_max >= 5:
-        top = "코트"
+        # 초겨울
+        base = "니트나 후드티에 트렌치코트나 코트를 입으세요."
+    elif t_max >= 0:
+        # 겨울
+        base = "두꺼운 니트에 패딩이나 두꺼운 코트를 입으세요."
     else:
-        top = "두꺼운 패딩"
+        # 혹한
+        base = "두꺼운 패딩을 입으시고, 목도리와 장갑도 꼭 챙기세요."
 
+    # ── 부가 조언 ────────────────────────────────────────────
     extras = []
-    # 아침이 춥거나 일교차가 크면 레이어링 안내
-    if diff >= 10:
-        extras.append("일교차가 크니 겉옷을 꼭 챙기세요")
-    elif t_min <= 10 and t_max >= 18:
-        extras.append("아침저녁이 쌀쌀하니 가벼운 겉옷을 챙기세요")
-    if wind >= 7:
-        extras.append("바람이 강하니 방풍 외투가 좋아요")
-    if "비" in condition or "rain" in condition.lower() or "drizzle" in condition.lower():
-        extras.append("비가 오니 우산을 챙기세요")
-    if "눈" in condition or "snow" in condition.lower():
-        extras.append("눈이 오니 미끄러운 길 조심하세요")
 
-    advice = f"{top}를 추천드려요."
+    # 일교차 또는 아침 추위 경고
+    if t_min <= 10 and t_max >= 20:
+        extras.append("아침저녁이 많이 쌀쌀하니 겉옷을 꼭 챙기세요")
+    elif t_max - t_min >= 10:
+        extras.append("일교차가 크니 레이어링을 추천드려요")
+
+    if wind >= 7:
+        extras.append("바람이 강하니 방풍 기능이 있는 외투가 좋아요")
+
+    is_rainy = "비" in condition or "rain" in condition.lower() or "drizzle" in condition.lower()
+    is_snowy = "눈" in condition or "snow" in condition.lower()
+    if is_rainy:
+        extras.append("비가 오니 우산을 꼭 챙기세요")
+    if is_snowy:
+        extras.append("눈이 오니 미끄럼 조심하시고 방수 신발을 신으세요")
+
+    advice = base
     if extras:
         advice += " " + " ".join(extras) + "."
     return advice

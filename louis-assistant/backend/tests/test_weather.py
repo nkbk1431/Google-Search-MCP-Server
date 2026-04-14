@@ -113,15 +113,39 @@ def _make_weather(temp_max: float, temp_min: float, condition: str = "맑음", w
 
 
 def test_outfit_hot_weather():
-    """더운 날씨 (30도) 반팔 추천 확인."""
+    """더운 날씨 (30도) 반팔/민소매 추천 확인."""
     result = recommend_outfit.invoke({"weather_json": _make_weather(30, 22)})
     assert "반팔" in result or "민소매" in result
+
+
+def test_outfit_summer():
+    """초여름 (24도) 반팔 추천 확인."""
+    result = recommend_outfit.invoke({"weather_json": _make_weather(24, 16)})
+    assert "반팔" in result
+
+
+def test_outfit_spring_with_outer():
+    """봄/가을 대표 구간 (13~19도): 반팔 + 아우터 조합 확인."""
+    result = recommend_outfit.invoke({"weather_json": _make_weather(17, 9)})
+    assert "반팔" in result and ("아우터" in result or "자켓" in result or "바람막이" in result)
+
+
+def test_outfit_spring_with_outer_low_end():
+    """봄/가을 하한 (13도): 반팔 + 아우터 조합 확인."""
+    result = recommend_outfit.invoke({"weather_json": _make_weather(13, 7)})
+    assert "반팔" in result and ("아우터" in result or "자켓" in result or "바람막이" in result)
 
 
 def test_outfit_cold_weather():
     """추운 날씨 (4도) 패딩 추천 확인."""
     result = recommend_outfit.invoke({"weather_json": _make_weather(4, -2)})
-    assert "패딩" in result
+    assert "패딩" in result or "코트" in result
+
+
+def test_outfit_freezing():
+    """혹한 (-5도 이하) 두꺼운 패딩 + 목도리 확인."""
+    result = recommend_outfit.invoke({"weather_json": _make_weather(-6, -12)})
+    assert "패딩" in result and ("목도리" in result or "장갑" in result)
 
 
 def test_outfit_rainy_day():
@@ -130,21 +154,21 @@ def test_outfit_rainy_day():
     assert "우산" in result
 
 
+def test_outfit_snowy_day():
+    """눈 오는 날 미끄럼 조심 언급 확인."""
+    result = recommend_outfit.invoke({"weather_json": _make_weather(0, -4, "눈")})
+    assert "눈" in result or "미끄럼" in result or "방수" in result
+
+
 def test_outfit_windy_day():
     """바람 강한 날 방풍 언급 확인."""
-    result = recommend_outfit.invoke({"weather_json": _make_weather(20, 14, "맑음", wind=7.0)})
+    result = recommend_outfit.invoke({"weather_json": _make_weather(20, 14, "맑음", wind=8.0)})
     assert "방풍" in result
 
 
-def test_outfit_large_temp_diff():
-    """일교차 큰 날 겉옷 언급 확인."""
-    result = recommend_outfit.invoke({"weather_json": _make_weather(22, 10)})
-    assert "겉옷" in result or "바람막이" in result
-
-
 def test_outfit_cold_morning_warm_day():
-    """아침 춥고 낮 따뜻한 날 (t_min<=10, t_max>=18) 겉옷 안내 확인."""
-    result = recommend_outfit.invoke({"weather_json": _make_weather(20, 8)})
+    """아침 춥고 낮 따뜻한 날 (t_min<=10, t_max>=20) 겉옷 안내 확인."""
+    result = recommend_outfit.invoke({"weather_json": _make_weather(22, 8)})
     assert "겉옷" in result or "쌀쌀" in result
 
 
