@@ -1,5 +1,5 @@
 # 루이스 백엔드 - Windows 스마트폰 테스트용 빠른 시작 스크립트
-# 사용법: conda activate louis && .\quick_start.ps1 [포트]
+# 사용법: .venv\Scripts\activate 후 .\quick_start.ps1 [포트]
 param([int]$Port = 8000)
 
 $ErrorActionPreference = "Stop"

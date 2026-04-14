@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.13.12
+  - python=3.12.13
   - pip
   # conda-forge에서 미리 빌드된 바이너리 (Windows 빌드 에러 방지)
   - numpy

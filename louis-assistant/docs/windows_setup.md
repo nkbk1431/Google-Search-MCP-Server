@@ -1,335 +1,356 @@
 # 루이스(Louis) 개인비서 - Windows 개발 환경 설정 가이드
 
-Windows PC에서 Miniconda + Python 3.13.12 기준으로 백엔드를 실행하고,
-Flutter로 Android 앱을 빌드하는 전체 과정을 설명합니다.
+Python 3.12.13 + venv 기준으로 백엔드를 실행하고,
+Flutter로 Android APK를 빌드하는 전체 과정을 설명합니다.
 
 ---
 
 ## 목차
 
-1. [Python 버전 선택 이유](#1-python-버전-선택)
-2. [Miniconda 설치](#2-miniconda-설치)
-3. [Conda 가상환경 생성](#3-conda-가상환경-생성)
-4. [프로젝트 클론 및 설정](#4-프로젝트-클론-및-설정)
-5. [백엔드 실행](#5-백엔드-실행)
-6. [Flutter 설치 (앱 빌드용)](#6-flutter-설치)
-7. [Android APK 빌드](#7-android-apk-빌드)
-8. [스마트폰 테스트](#8-스마트폰-테스트)
-9. [VS Code 개발 환경 추천 설정](#9-vs-code-설정)
+1. [사전 설치 확인](#1-사전-설치-확인)
+2. [가상환경 생성 (venv)](#2-가상환경-생성)
+3. [프로젝트 설정](#3-프로젝트-설정)
+4. [백엔드 실행](#4-백엔드-실행)
+5. [Flutter 설치 (APK 빌드용)](#5-flutter-설치)
+6. [Android APK 빌드](#6-android-apk-빌드)
+7. [스마트폰 테스트](#7-스마트폰-테스트)
+8. [VS Code 설정](#8-vs-code-설정)
+9. [CUDA / GPU 설정](#9-cuda--gpu-설정)
 10. [Windows 트러블슈팅](#10-windows-트러블슈팅)
 
 ---
 
-## 1. Python 버전 선택
+## 1. 사전 설치 확인
 
-**Python 3.13.12를 사용합니다.**
+아래 항목이 이미 설치돼 있어야 합니다.
 
-| 항목 | 3.13.12 | 비고 |
-|------|---------|------|
-| LangChain / LangGraph | ✅ | 공식 지원 |
-| FastAPI / Pydantic | ✅ | 공식 지원 |
-| pykrx (주식) | ✅ | numpy 3.13 호환 |
-| passlib / bcrypt | ✅ | `bcrypt==4.3.0` + `passlib==1.7.4` 분리로 해결 |
-| pvporcupine (웨이크워드) | ✅ | Python 3.x 지원 |
-
-> Python 3.13에서 `crypt` 표준 모듈이 제거됐지만, 이 프로젝트는
-> `bcrypt==4.3.0` + `passlib==1.7.4`를 별도 설치해 호환성 문제를 해결했습니다.
-
----
-
-## 2. Miniconda 설치
-
-### 2-1. 다운로드 및 설치
-
-1. [Miniconda 공식 다운로드 페이지](https://docs.conda.io/en/latest/miniconda.html) 접속
-2. **Miniconda3 Windows 64-bit** (`.exe`) 다운로드
-3. 설치 시 옵션:
-   - "Add Miniconda3 to my PATH" → **체크 권장** (또는 Anaconda Prompt 사용)
-   - "Register Miniconda3 as my default Python 3.x" → 체크
-
-### 2-2. 설치 확인
-
-**PowerShell** 또는 **Anaconda Prompt** 열기:
+### Python 3.12.13
 
 ```powershell
-conda --version
-# conda 24.x.x 출력되면 정상
-```
-
-> **PowerShell에서 conda를 찾지 못할 경우**:
-> 시작 메뉴 → "Anaconda Prompt" 검색 후 사용하거나,
-> PowerShell을 관리자로 열고 아래 실행:
-> ```powershell
-> conda init powershell
-> # 새 PowerShell 창을 열면 적용됨
-> ```
-
----
-
-## 3. Conda 가상환경 생성
-
-```powershell
-# Python 3.12 환경 생성
-conda create -n louis python=3.13.12 -y
-
-# 환경 활성화
-conda activate louis
-
-# 확인
 python --version
-# Python 3.13.12 출력
+# Python 3.12.13 출력 확인
 ```
 
-> **매번 conda activate louis를 치기 싫다면:**
-> VS Code에서 Python 인터프리터를 `louis` 환경으로 설정하면
-> 터미널 열 때 자동으로 활성화됩니다. (아래 9번 참조)
+없으면 [python.org](https://www.python.org/downloads/) 에서 3.12.13 다운로드 후 설치.
+설치 시 **"Add Python to PATH"** 반드시 체크.
 
----
-
-## 4. 프로젝트 클론 및 설정
-
-### 4-1. Git 설치 확인
+### Git
 
 ```powershell
 git --version
-# 없으면: https://git-scm.com/download/win 에서 설치
+# 없으면: https://git-scm.com/download/win
 ```
 
-### 4-2. 저장소 클론
+### CUDA / cuDNN (이미 설치됨)
+
+```powershell
+nvcc --version        # CUDA 버전 확인
+nvidia-smi            # GPU 상태 확인 (GTX 1050 Ti)
+```
+
+현재 프로젝트는 Claude API를 사용하므로 GPU가 필수는 아닙니다.
+향후 로컬 LLM(llama.cpp 등) 연동 시 CUDA가 활용됩니다.
+
+---
+
+## 2. 가상환경 생성
+
+Python 내장 `venv`를 사용합니다. Conda/Anaconda 불필요.
+
+```powershell
+# 저장소 루트에서
+cd $HOME\projects\LOUIS_APP
+
+# 가상환경 생성 (최초 1회)
+python -m venv .venv
+
+# 활성화
+.venv\Scripts\activate
+# 프롬프트 앞에 (.venv) 표시 확인
+```
+
+> **매번 활성화하기 귀찮다면 — VS Code 자동 활성화**
+> VS Code에서 Python 인터프리터로 `.venv`를 선택하면
+> 터미널을 열 때 자동으로 활성화됩니다. (8번 참조)
+
+### 가상환경 비활성화 (필요 시)
+
+```powershell
+deactivate
+```
+
+---
+
+## 3. 프로젝트 설정
+
+### 3-1. 저장소 클론
 
 ```powershell
 cd $HOME
-mkdir projects
+mkdir projects -ErrorAction SilentlyContinue
 cd projects
 git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP
 ```
 
-### 4-3. 환경 변수 설정
+### 3-2. 가상환경 활성화 및 의존성 설치
 
 ```powershell
-cd backend
-Copy-Item .env.example .env
-notepad .env
+.venv\Scripts\activate
+
+# 의존성 설치
+pip install -r backend\requirements.txt
 ```
 
-`.env` 파일에서 아래 항목을 설정합니다:
+> **lxml, numpy 빌드 에러 시:**
+> ```powershell
+> pip install --upgrade pip wheel
+> pip install lxml numpy --only-binary :all:
+> pip install -r backend\requirements.txt
+> ```
+
+### 3-3. 환경변수 설정
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+notepad backend\.env
+```
+
+`.env` 필수 항목:
 
 ```ini
-# 필수
-ANTHROPIC_API_KEY=sk-ant-...          # https://console.anthropic.com
-APP_SECRET_KEY=your-random-secret-32chars
+# Claude AI 응답 (필수)
+ANTHROPIC_API_KEY=sk-ant-...
+# → https://console.anthropic.com
 
 # 날씨 기능 (권장)
-OPENWEATHER_API_KEY=...               # https://openweathermap.org/api
+OPENWEATHER_API_KEY=...
+# → https://openweathermap.org/api (무료)
 
-# 기본값으로 두면 됨
+# 기본값 유지
 APP_ENV=development
+APP_SECRET_KEY=test-secret-key-change-in-production
 DATABASE_URL=sqlite+aiosqlite:///./louis.db
 ```
 
-### 4-4. Python 패키지 설치
-
-```powershell
-# conda 환경이 활성화된 상태에서
-conda activate louis
-pip install -r requirements.txt
-```
-
-> **설치 중 에러가 나는 패키지가 있다면:**
-> ```powershell
-> # pykrx, lxml 등 빌드 도구가 필요한 경우
-> conda install -c conda-forge lxml numpy -y
-> pip install -r requirements.txt
-> ```
-
 ---
 
-## 5. 백엔드 실행
+## 4. 백엔드 실행
 
-### 5-1. 빠른 시작 (PowerShell)
+### 빠른 시작 스크립트
 
 ```powershell
-conda activate louis
-cd $HOME\projects\LOUIS_APP\backend
+.venv\Scripts\activate
+cd backend
 .\quick_start.ps1
 ```
 
-또는 수동으로:
+실행 후 출력 예시:
+```
+========================================
+ 접속 정보
+========================================
+  PC 브라우저:  http://localhost:8000/docs
+  스마트폰:     http://192.168.0.10:8000
+  테스트 계정:  admin / louis1234
+========================================
+```
+
+### 수동 실행
 
 ```powershell
+.venv\Scripts\activate
+cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 5-2. 실행 확인
+### 테스트 실행
 
-브라우저에서 `http://localhost:8000/docs` 접속 → Swagger UI 확인
-
-### 5-3. 테스트 계정
-
-| 항목 | 값 |
-|------|---|
-| 아이디 | `admin` |
-| 비밀번호 | `louis1234` |
+```powershell
+.venv\Scripts\activate
+cd backend
+pytest tests/ -v --tb=short
+```
 
 ---
 
-## 6. Flutter 설치
+## 5. Flutter 설치
 
-### 6-1. Flutter SDK 다운로드
+### 5-1. Flutter SDK
 
-1. [Flutter 공식 사이트](https://flutter.dev/docs/get-started/install/windows) 접속
-2. Flutter SDK zip 다운로드 후 압축 해제 (예: `C:\flutter`)
-3. Path 환경변수에 `C:\flutter\bin` 추가:
-   - 시작 → "환경 변수 편집" → Path → 새로 만들기 → `C:\flutter\bin`
+1. [flutter.dev](https://flutter.dev/docs/get-started/install/windows) 에서 SDK zip 다운로드
+2. `C:\flutter` 에 압축 해제
+3. 시스템 환경변수 `Path`에 `C:\flutter\bin` 추가
 
-### 6-2. Android Studio 설치
+```powershell
+flutter --version   # 설치 확인
+```
 
-1. [Android Studio 다운로드](https://developer.android.com/studio)
-2. 설치 후 SDK 설정:
-   - Android Studio 실행 → SDK Manager → **Android SDK 설치**
-   - Android 13 (API 33) 이상 설치
+### 5-2. Android Studio
 
-### 6-3. Flutter 환경 확인
+1. [developer.android.com/studio](https://developer.android.com/studio) 에서 다운로드
+2. 설치 후 SDK Manager → Android 13 (API 33) 이상 설치
+
+### 5-3. Flutter 환경 확인
 
 ```powershell
 flutter doctor
+# Flutter SDK ✓, Android toolchain ✓ 확인
 ```
-
-모든 항목에 체크(✓)가 되면 준비 완료입니다.
-`Flutter SDK`, `Android toolchain` 두 항목이 필수입니다.
 
 ---
 
-## 7. Android APK 빌드
+## 6. Android APK 빌드
 
-### 7-1. PowerShell 빌드 스크립트 사용
+### PowerShell 스크립트 사용
 
 ```powershell
-cd $HOME\projects\LOUIS_APP\mobile
-.\build_test_apk.ps1 192.168.0.10    # 백엔드 PC의 로컬 IP 입력
+cd mobile
+.\build_test_apk.ps1 192.168.0.10   # quick_start.ps1이 알려준 IP 입력
 ```
 
-### 7-2. 수동 빌드
+### 수동 빌드
 
 ```powershell
-cd $HOME\projects\LOUIS_APP\mobile
+cd mobile
 flutter pub get
 flutter build apk --debug --dart-define=BASE_URL=http://192.168.0.10:8000
 ```
 
-빌드된 APK 위치:
-```
-mobile\build\app\outputs\flutter-apk\app-debug.apk
-```
+APK 위치: `mobile\build\app\outputs\flutter-apk\app-debug.apk`
 
 ---
 
-## 8. 스마트폰 테스트
+## 7. 스마트폰 테스트
 
-### 방법 A: USB (adb)
+### USB (adb)
 
 ```powershell
-# Android 개발자 옵션 → USB 디버깅 ON
-adb devices          # 연결된 기기 확인
+# 스마트폰: 개발자 옵션 → USB 디버깅 ON
+adb devices
 adb install mobile\build\app\outputs\flutter-apk\app-debug.apk
 ```
 
-### 방법 B: 파일 전송
+### 파일 전송
 
-1. APK 파일을 카카오톡/이메일/USB로 스마트폰에 전송
-2. 스마트폰 설정 → 보안 → "출처를 알 수 없는 앱 허용"
-3. 전송한 APK 파일 클릭하여 설치
+APK를 카카오톡/USB로 전송 후 스마트폰에서 직접 설치.
+스마트폰 설정 → 보안 → **출처를 알 수 없는 앱 허용** 필요.
 
-### 연결 확인
+### 연결 조건
 
-- 백엔드 PC와 스마트폰이 **같은 Wi-Fi**에 연결돼야 합니다
-- 방화벽에서 8000 포트가 열려있어야 합니다:
-  ```powershell
-  # 관리자 PowerShell에서
-  netsh advfirewall firewall add rule name="Louis Backend" dir=in action=allow protocol=TCP localport=8000
-  ```
+- PC와 스마트폰이 **같은 Wi-Fi** 연결
+- Windows 방화벽 8000포트 허용 (quick_start.ps1이 자동 설정)
 
 ---
 
-## 9. VS Code 설정
+## 8. VS Code 설정
 
-### 9-1. 권장 확장 프로그램
+### 권장 확장
 
 ```
-ms-python.python          # Python
-ms-python.pylance         # 타입 힌트
-dart-code.flutter         # Flutter
-dart-code.dart-code       # Dart
-ms-azuretools.vscode-docker  # Docker (선택)
+ms-python.python
+ms-python.pylance
+dart-code.flutter
 ```
 
-### 9-2. Python 인터프리터 설정 (conda 자동 활성화)
+### Python 인터프리터 설정 (자동 활성화)
 
-1. `Ctrl+Shift+P` → "Python: Select Interpreter"
-2. `conda (louis)` 환경 선택
-3. 이후 VS Code 터미널은 자동으로 `conda activate louis` 상태
+1. `Ctrl+Shift+P` → **Python: Select Interpreter**
+2. `.venv\Scripts\python.exe` 선택
+3. 이후 VS Code 터미널 열 때 자동으로 venv 활성화
 
-### 9-3. `.vscode/settings.json` (루트에 생성)
+### `.vscode/settings.json`
 
 ```json
 {
-  "python.defaultInterpreterPath": "C:\\Users\\[사용자명]\\miniconda3\\envs\\louis\\python.exe",
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
   "python.terminal.activateEnvironment": true,
-  "editor.formatOnSave": true,
-  "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
-  }
+  "editor.formatOnSave": true
 }
+```
+
+---
+
+## 9. CUDA / GPU 설정
+
+현재 GTX 1050 Ti + CUDA + cuDNN이 설치돼 있습니다.
+
+### 현재 프로젝트에서의 역할
+
+| 기능 | GPU 사용 여부 |
+|------|-------------|
+| Claude API 호출 | ❌ (클라우드 처리) |
+| 날씨/일정/검색 도구 | ❌ |
+| TTS (ElevenLabs) | ❌ |
+| 향후 로컬 Whisper STT | ✅ GPU 가속 가능 |
+| 향후 로컬 LLM | ✅ GPU 가속 가능 |
+
+### 향후 로컬 AI 사용 시 (선택)
+
+```powershell
+# faster-whisper (로컬 STT, GPU 가속)
+pip install faster-whisper
+
+# llama-cpp-python (로컬 LLM, CUDA 빌드)
+$env:CMAKE_ARGS="-DLLAMA_CUDA=on"
+pip install llama-cpp-python --force-reinstall --no-cache-dir
 ```
 
 ---
 
 ## 10. Windows 트러블슈팅
 
-### `uvicorn` 명령을 찾지 못하는 경우
+### `python` 명령을 찾지 못할 때
+
 ```powershell
-# conda 환경 활성화 확인
-conda activate louis
-# 명령 프롬프트 앞에 (louis) 표시 확인
-uvicorn --version
+# Python PATH 확인
+where python
+# 없으면 Python 설치 시 "Add to PATH" 누락 → 재설치
 ```
 
-### `pip install` 중 빌드 에러 (lxml, numpy 등)
+### `pip install` 중 빌드 에러
+
 ```powershell
 # Visual C++ Build Tools 설치
 # https://visualstudio.microsoft.com/visual-cpp-build-tools/
-# 또는 conda에서 미리 빌드된 버전 설치
-conda install -c conda-forge lxml numpy -y
+# "C++ build tools" 워크로드 선택
+
+# 또는 미리 빌드된 바이너리만 사용
+pip install lxml numpy --only-binary :all:
 ```
 
-### `adb devices`가 기기를 인식 못하는 경우
-```powershell
-# 스마트폰 USB 디버깅 확인
-# 설정 → 개발자 옵션 → USB 디버깅 ON
-# USB 연결 후 "이 컴퓨터에서 USB 디버깅 허용?" 팝업 → 허용
-adb kill-server
-adb start-server
-adb devices
-```
+### PowerShell 스크립트 실행 에러
 
-### PowerShell 스크립트 실행 정책 에러
 ```powershell
 # 관리자 PowerShell에서 실행
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-### Windows Defender가 APK 설치를 막는 경우
-스마트폰 설정 → 보안 → "Google Play 프로텍트" → APK 설치 허용
+### `adb devices`에 기기 미표시
+
+```powershell
+adb kill-server
+adb start-server
+adb devices
+# 스마트폰에서 "USB 디버깅 허용" 팝업 → 허용
+```
+
+### 방화벽으로 스마트폰 접속 불가
+
+```powershell
+# 관리자 PowerShell에서
+netsh advfirewall firewall add rule name="Louis Backend" dir=in action=allow protocol=TCP localport=8000
+```
 
 ---
 
 ## Linux (Ubuntu) 사용자는?
 
-Ubuntu에서는 `quick_start.sh` / `build_test_apk.sh` 스크립트를 사용하세요.
-자세한 내용은 루트의 `test_on_phone.sh` 파일을 참고하세요.
-
 ```bash
+conda activate louis   # Conda 환경 사용 중이라면
+# 또는
+source .venv/bin/activate   # venv 사용 시
+
 cd backend
 bash quick_start.sh
 ```

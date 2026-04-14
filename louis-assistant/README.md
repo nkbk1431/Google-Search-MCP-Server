@@ -2,37 +2,34 @@
 
 스마트폰에서 "루이스"라는 웨이크워드로 호출하는 AI 개인비서 앱.
 
-- **백엔드**: Python 3.13.12 + FastAPI + LangGraph (Cloud Run 배포)
+- **백엔드**: Python 3.12.13 + FastAPI + LangGraph (Cloud Run 배포)
 - **모바일**: Flutter (Android 우선, iOS 차후)
 - **AI**: Claude Haiku 4.5 (기본) / Claude Sonnet 4.6 (복잡 작업)
 - **현재**: Phase 15 완료 — 프로덕션 배포 준비 완료
 
-> Python 버전: **3.13.12** 사용 (`bcrypt==4.3.0` + `passlib==1.7.4` 분리로 3.13 호환성 해결)
+> Python 버전: **3.12.13** 사용
 
 ---
 
 ## 빠른 시작
 
-### Windows (PowerShell + Miniconda)
+### Windows (PowerShell + venv)
+
+Python 3.12.13이 설치돼 있어야 합니다. [python.org](https://www.python.org/downloads/) 에서 설치 시 **"Add Python to PATH"** 반드시 체크.
 
 ```powershell
-# 1. Miniconda 설치 후 Python 3.13.12 환경 생성
-conda create -n louis python=3.13.12 -y
-conda activate louis
-
-# 2. 저장소 클론
+# 1. 저장소 클론
 git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP
 
-# 3. 의존성 설치 (conda-forge로 바이너리 먼저 설치)
-conda install -c conda-forge numpy lxml -y
+# 2. 가상환경 생성 및 활성화
+python -m venv .venv
+.venv\Scripts\activate
+
+# 3. 의존성 설치
 pip install -r backend\requirements.txt
 
-# 4. 환경변수 설정
-Copy-Item backend\.env.example backend\.env
-notepad backend\.env   # API 키 입력
-
-# 5. 백엔드 실행
+# 4. 백엔드 실행 (.env 자동 생성 + 방화벽 설정 + IP 안내 포함)
 cd backend
 .\quick_start.ps1
 # → http://localhost:8000/docs 에서 Swagger UI 확인
@@ -43,13 +40,13 @@ cd backend
 ### Linux (Ubuntu / bash)
 
 ```bash
-# 1. Miniconda 설치 후 Python 3.13.12 환경 생성
-conda create -n louis python=3.13.12 -y
-conda activate louis
-
-# 2. 저장소 클론
+# 1. 저장소 클론
 git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP
+
+# 2. 가상환경 생성 및 활성화
+python3 -m venv .venv
+source .venv/bin/activate
 
 # 3. 백엔드 실행 (의존성 자동 설치 + IP 안내 포함)
 cd backend
@@ -57,7 +54,7 @@ bash quick_start.sh
 # → 스마트폰 접속 URL이 출력됩니다
 ```
 
-### Conda 환경 한 번에 구성 (Windows/Linux 공통)
+### Linux Conda 환경 (선택)
 
 ```bash
 # 프로젝트 루트에서
@@ -114,14 +111,14 @@ bash build_test_apk.sh 192.168.0.10
 
 **Windows:**
 ```powershell
-conda activate louis
+.venv\Scripts\activate
 cd backend
 pytest tests/ -v --tb=short
 ```
 
 **Linux:**
 ```bash
-conda activate louis
+source .venv/bin/activate
 cd backend
 pytest tests/ -v --tb=short
 ```
@@ -268,7 +265,7 @@ louis-assistant/
 | Agent 프레임워크 | LangGraph ReAct + MemorySaver |
 | 백엔드 | Python 3.13.12 + FastAPI + SQLAlchemy + APScheduler |
 | 인증 | JWT (HS256) + Google OAuth 2.0 |
-| 개발 환경 | Miniconda (Windows/Linux 공통) + Python 3.13.12 |
+| 개발 환경 | Python 3.12.13 + venv (Windows) / venv or Conda (Linux) |
 | 캐시 | Redis (선택) / 인메모리 폴백 |
 | 배포 | Google Cloud Run (서울 asia-northeast3) |
 | CI/CD | GitHub Actions + Cloud Build |
