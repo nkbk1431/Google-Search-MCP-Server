@@ -7,7 +7,7 @@ import json
 import pytest
 import requests_mock as req_mock
 
-from app.agent.tools.weather import get_weather, recommend_outfit, CITY_MAP
+from app.agent.tools.weather import get_weather, recommend_outfit, get_weather_and_outfit, CITY_MAP
 
 
 # ── get_weather 테스트 ──────────────────────────────────────────────
@@ -142,7 +142,53 @@ def test_outfit_large_temp_diff():
     assert "겉옷" in result or "바람막이" in result
 
 
+def test_outfit_cold_morning_warm_day():
+    """아침 춥고 낮 따뜻한 날 (t_min<=10, t_max>=18) 겉옷 안내 확인."""
+    result = recommend_outfit.invoke({"weather_json": _make_weather(20, 8)})
+    assert "겉옷" in result or "쌀쌀" in result
+
+
 def test_outfit_invalid_json():
     """잘못된 JSON 입력 처리."""
     result = recommend_outfit.invoke({"weather_json": "not-json"})
     assert "불러올 수 없" in result
+
+
+# ── get_weather_and_outfit 테스트 ──────────────────────────────────────
+
+def test_get_weather_and_outfit_returns_combined(requests_mock):
+    """날씨+옷차림 통합 도구가 기온과 옷차림을 모두 포함하는지 확인."""
+    requests_mock.get(
+        "https://api.openweathermap.org/data/2.5/weather",
+        json=MOCK_CURRENT,
+    )
+    requests_mock.get(
+        "https://api.openweathermap.org/data/2.5/forecast",
+        json=MOCK_FORECAST,
+    )
+
+    result = get_weather_and_outfit.invoke({"city": "서울"})
+
+    assert "18.5" in result or "°C" in result
+    # 옷차림 키워드 포함 여부
+    outfit_keywords = ["추천", "반팔", "긴팔", "자켓", "코트", "패딩", "가디건", "맨투맨"]
+    assert any(kw in result for kw in outfit_keywords)
+
+
+def test_get_weather_and_outfit_rainy(requests_mock):
+    """비 오는 날 우산 언급 확인."""
+    mock = {**MOCK_CURRENT, "weather": [{"description": "비"}]}
+    requests_mock.get("https://api.openweathermap.org/data/2.5/weather", json=mock)
+    requests_mock.get("https://api.openweathermap.org/data/2.5/forecast", json=MOCK_FORECAST)
+
+    result = get_weather_and_outfit.invoke({"city": "서울"})
+    assert "우산" in result
+
+
+def test_get_weather_and_outfit_timeout(requests_mock):
+    """타임아웃 시 에러 메시지 반환 확인."""
+    import requests
+    requests_mock.get("https://api.openweathermap.org/data/2.5/weather", exc=requests.Timeout)
+
+    result = get_weather_and_outfit.invoke({"city": "서울"})
+    assert "늦어요" in result or "실패" in result

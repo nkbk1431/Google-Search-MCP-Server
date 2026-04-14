@@ -113,31 +113,16 @@ def get_weather(city: str = "Seoul") -> str:
         return json.dumps({"error": "날씨 조회에 실패했어요."}, ensure_ascii=False)
 
 
-@tool
-def recommend_outfit(weather_json: str) -> str:
-    """날씨 정보(JSON)를 바탕으로 오늘 옷차림을 추천합니다.
-
-    Args:
-        weather_json: get_weather 도구가 반환한 JSON 문자열
-
-    Returns:
-        자연스러운 한국어 옷차림 추천 문장
-    """
-    try:
-        w = json.loads(weather_json)
-    except (json.JSONDecodeError, TypeError):
-        return "날씨 정보를 불러올 수 없어서 옷차림을 추천하기 어려워요."
-
-    if "error" in w:
-        return "날씨 조회에 실패해서 옷차림을 추천하기 어려워요."
-
+def _build_outfit_advice(w: dict) -> str:
+    """날씨 dict에서 옷차림 추천 문장을 생성합니다 (내부 헬퍼)."""
     t_max = w.get("temp_max", 20)
     t_min = w.get("temp_min", 10)
     diff = t_max - t_min
     condition = w.get("condition", "")
     wind = w.get("wind_speed", 0)
 
-    # 기온 구간별 상의
+    # 아침·저녁 체감 기준은 t_min, 낮 기준은 t_max
+    # → 둘 다 고려해서 레이어링 필요 여부 결정
     if t_max >= 28:
         top = "반팔이나 민소매"
     elif t_max >= 23:
@@ -156,16 +141,114 @@ def recommend_outfit(weather_json: str) -> str:
         top = "두꺼운 패딩"
 
     extras = []
-    if diff >= 10 and t_max >= 15:
-        extras.append("일교차가 크니 바람막이나 얇은 겉옷을 챙기세요")
-    if wind >= 5:
+    # 아침이 춥거나 일교차가 크면 레이어링 안내
+    if diff >= 10:
+        extras.append("일교차가 크니 겉옷을 꼭 챙기세요")
+    elif t_min <= 10 and t_max >= 18:
+        extras.append("아침저녁이 쌀쌀하니 가벼운 겉옷을 챙기세요")
+    if wind >= 7:
         extras.append("바람이 강하니 방풍 외투가 좋아요")
-    if "비" in condition or "rain" in condition.lower():
-        extras.append("우산을 챙기세요")
+    if "비" in condition or "rain" in condition.lower() or "drizzle" in condition.lower():
+        extras.append("비가 오니 우산을 챙기세요")
     if "눈" in condition or "snow" in condition.lower():
-        extras.append("미끄러우니 조심하세요")
+        extras.append("눈이 오니 미끄러운 길 조심하세요")
 
-    reply = f"{top} 추천드려요."
+    advice = f"{top}를 추천드려요."
     if extras:
-        reply += " " + " ".join(extras) + "."
-    return reply
+        advice += " " + " ".join(extras) + "."
+    return advice
+
+
+@tool
+def recommend_outfit(weather_json: str) -> str:
+    """날씨 정보(JSON)를 바탕으로 오늘 옷차림을 추천합니다.
+
+    Args:
+        weather_json: get_weather 도구가 반환한 JSON 문자열
+
+    Returns:
+        자연스러운 한국어 옷차림 추천 문장
+    """
+    try:
+        w = json.loads(weather_json)
+    except (json.JSONDecodeError, TypeError):
+        return "날씨 정보를 불러올 수 없어서 옷차림을 추천하기 어려워요."
+
+    if "error" in w:
+        return "날씨 조회에 실패해서 옷차림을 추천하기 어려워요."
+
+    return _build_outfit_advice(w)
+
+
+@tool
+def get_weather_and_outfit(city: str = "서울") -> str:
+    """현재 날씨와 옷차림 추천을 한 번에 알려줍니다.
+
+    날씨를 묻거나 뭘 입을지 물어볼 때 이 도구를 사용하세요.
+    get_weather → recommend_outfit을 순서대로 직접 호출하지 말고 이 도구 하나만 사용하세요.
+
+    Args:
+        city: 도시 이름 (한글 또는 영문). 기본값 서울.
+
+    Returns:
+        날씨 요약 + 옷차림 추천이 포함된 자연스러운 한국어 문장
+    """
+    city_en = CITY_MAP.get(city, city)
+
+    try:
+        current, forecast = _fetch_weather_raw(city_en)
+
+        if current.get("cod") != 200:
+            return f"'{city}' 날씨를 찾을 수 없어요."
+
+        from datetime import datetime as _dt
+        today = _dt.now().date()
+        day_temps = [
+            item["main"]["temp"]
+            for item in forecast.get("list", [])
+            if _dt.fromtimestamp(item["dt"]).date() == today
+        ]
+        if not day_temps:
+            day_temps = [current["main"]["temp"]]
+
+        t_now = round(current["main"]["temp"], 1)
+        t_max = round(max(day_temps), 1)
+        t_min = round(min(day_temps), 1)
+        condition = current["weather"][0]["description"]
+        humidity = current["main"]["humidity"]
+        wind = current["wind"]["speed"]
+
+        w = {
+            "temp_now": t_now,
+            "temp_max": t_max,
+            "temp_min": t_min,
+            "condition": condition,
+            "wind_speed": wind,
+            "humidity": humidity,
+        }
+        outfit = _build_outfit_advice(w)
+
+        # 자연스러운 문장으로 조합
+        rain_note = ""
+        if "비" in condition or "rain" in condition.lower() or "drizzle" in condition.lower():
+            rain_note = " 비가 오고 있어요."
+        elif "눈" in condition or "snow" in condition.lower():
+            rain_note = " 눈이 오고 있어요."
+        elif "맑" in condition or "clear" in condition.lower():
+            rain_note = " 맑은 날씨예요."
+        elif "흐" in condition or "cloud" in condition.lower():
+            rain_note = " 흐린 날씨예요."
+
+        return (
+            f"{city} 현재 기온은 {t_now}°C이고, "
+            f"오늘 최고 {t_max}°C / 최저 {t_min}°C 예상돼요.{rain_note} "
+            f"습도 {humidity}%, 바람 {wind}m/s예요. "
+            f"옷차림은 {outfit}"
+        )
+
+    except requests.Timeout:
+        log.warning(f"날씨 API 타임아웃: {city_en}")
+        return "날씨 서버 응답이 늦어요. 잠시 후 다시 시도해주세요."
+    except Exception as exc:
+        log.error(f"날씨+옷차림 조회 실패: {exc}", exc_info=True)
+        return "날씨 조회에 실패했어요."

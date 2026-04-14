@@ -22,7 +22,7 @@ from app.agent.prompts import (
 from app.agent.summarizer import ConversationSummarizer
 from app.services.personalization import get_personalization_service
 from app.agent.router import classify_intent, Intent
-from app.agent.tools.weather import get_weather, recommend_outfit
+from app.agent.tools.weather import get_weather, recommend_outfit, get_weather_and_outfit
 from app.agent.tools.calendar import (
     add_calendar_event, list_calendar_events,
     delete_calendar_event, search_calendar_events,
@@ -76,7 +76,7 @@ class LouisAgent:
 
     def _load_tools(self) -> list:
         return [
-            get_weather, recommend_outfit,
+            get_weather_and_outfit, get_weather, recommend_outfit,
             add_calendar_event, list_calendar_events,
             delete_calendar_event, search_calendar_events,
             set_reminder, set_reminder_at,
@@ -159,11 +159,6 @@ class LouisAgent:
                     asyncio.create_task(
                         self._run_summarization(session_id, agent)
                     )
-
-                # 긴 응답 요약
-                reply = result["reply"]
-                if len(reply) > 200:
-                    reply = reply[:200].rsplit(" ", 1)[0] + "..."
 
                 return result
             except Exception as exc:
