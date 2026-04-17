@@ -212,11 +212,9 @@ APK 위치: `mobile\build\app\outputs\flutter-apk\app-debug.apk`
 1. APK 설치 후 앱 실행
 2. 채팅 화면 하단 **마이크 버튼(🎤)** 누르면 음성 입력 시작
 3. "오늘 날씨 어때?" 같이 말하면 루이스가 응답
-4. **웨이크워드("루이스야") 사용 시**: `mobile/assets/wake_words/`에
-   sherpa-onnx 모델(encoder/decoder/joiner.onnx + tokens.txt + keywords.txt)을 배치하면
-   자동으로 온디바이스 감지가 활성화됨. 모델 다운로드는
-   [`mobile/assets/wake_words/README.md`](../mobile/assets/wake_words/README.md) 참조.
-   모델 없으면 버튼 트리거 모드로 폴백 (앱 동작에는 영향 없음)
+4. **웨이크워드**: 아무것도 설치하지 않아도 바로 사용 가능.
+   앱 실행 중 **"루이스"** 또는 **"루이스야"** 라고 말하면 자동 활성화.
+   Android 내장 한국어 STT 엔진을 사용하므로 추가 모델 파일 불필요.
 
 ### USB (adb) 설치
 

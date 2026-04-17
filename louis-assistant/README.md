@@ -5,7 +5,7 @@
 - **백엔드**: Python 3.12.13 + FastAPI + LangGraph (Cloud Run 배포)
 - **모바일**: Flutter (Android 우선, iOS 차후)
 - **AI**: Claude Haiku 4.5 (기본) / Claude Sonnet 4.6 (복잡 작업)
-- **웨이크워드**: sherpa-onnx 온디바이스 감지 (모델 있을 때) + 마이크 버튼 폴백
+- **웨이크워드**: Android 내장 한국어 STT로 "루이스" 감지 (추가 설치 없음)
 - **현재**: Phase 15 완료 — 프로덕션 배포 준비 완료
 
 > Python 버전: **3.12.13** 사용
@@ -73,7 +73,9 @@ conda activate louis
 
 ### API 키 발급
 
-### 3. Google Calendar / Gmail 연동
+위 표에서 각 API 링크로 이동해 키를 발급한 뒤 `backend\.env`에 입력하세요.
+
+### Google Calendar / Gmail 연동
 
 Cloud Run 같은 headless 환경에서도 동작하는 웹 OAuth 플로우:
 
@@ -257,7 +259,7 @@ louis-assistant/
 |------|------|
 | AI | Claude Haiku 4.5 / Sonnet 4.6 (Anthropic) |
 | Agent 프레임워크 | LangGraph ReAct + MemorySaver |
-| 백엔드 | Python 3.13.12 + FastAPI + SQLAlchemy + APScheduler |
+| 백엔드 | Python 3.12.13 + FastAPI + SQLAlchemy + APScheduler |
 | 인증 | JWT (HS256) + Google OAuth 2.0 |
 | 개발 환경 | Python 3.12.13 전역 설치 (Windows) / venv or Conda (Linux) |
 | 캐시 | Redis (선택) / 인메모리 폴백 |
@@ -270,7 +272,7 @@ louis-assistant/
 
 | 항목 | Windows | Linux (Ubuntu) |
 |------|---------|---------------|
-| 환경 관리 | `conda activate louis` | `conda activate louis` |
+| 환경 관리 | Python 3.12.13 전역 설치 | venv 또는 Conda |
 | 백엔드 시작 | `.\quick_start.ps1` | `bash quick_start.sh` |
 | APK 빌드 | `.\build_test_apk.ps1 IP` | `bash build_test_apk.sh IP` |
 | 방화벽 | PowerShell 스크립트 자동 설정 | `sudo ufw allow 8000` |
