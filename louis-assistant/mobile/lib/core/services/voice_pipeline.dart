@@ -33,16 +33,15 @@ class VoicePipeline extends ChangeNotifier {
         _sessionId = sessionId;
 
   /// 파이프라인을 초기화하고 웨이크워드 감지를 시작합니다.
-  Future<void> initialize({required String picovoiceKey}) async {
+  Future<void> initialize() async {
     await _voice.initialize();
     await _fg.initialize();
 
     // 포그라운드 서비스 시작 (백그라운드 웨이크워드 유지)
     await _fg.start();
 
-    // 웨이크워드 감지 시작
+    // 웨이크워드 감지 시작 (버튼 트리거 모드)
     await _wakeWord.start(
-      accessKey: picovoiceKey,
       onWakeWord: _onWakeWordDetected,
     );
 

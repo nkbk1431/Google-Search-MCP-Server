@@ -57,6 +57,13 @@ nvidia-smi            # GPU 상태 확인 (GTX 1050 Ti)
 
 Python 내장 `venv`를 사용합니다. Conda/Anaconda 불필요.
 
+> **먼저 실행 (최초 1회) — PowerShell 스크립트 실행 허용**
+> ```powershell
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+> ```
+> `.venv\Scripts\activate` 실행 시 **"이 시스템에서 스크립트를 실행할 수 없습니다"** 오류가 나면
+> 위 명령을 관리자 없이 일반 PowerShell에서 실행하면 해결됩니다.
+
 ```powershell
 # 저장소 루트에서
 cd $HOME\projects\LOUIS_APP

@@ -18,6 +18,9 @@
 Python 3.12.13이 설치돼 있어야 합니다. [python.org](https://www.python.org/downloads/) 에서 설치 시 **"Add Python to PATH"** 반드시 체크.
 
 ```powershell
+# 0. PowerShell 스크립트 실행 허용 (최초 1회)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
 # 1. 저장소 클론
 git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP

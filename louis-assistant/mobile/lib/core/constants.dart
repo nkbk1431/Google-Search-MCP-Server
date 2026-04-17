@@ -11,10 +11,6 @@ class AppConstants {
   );
   static const String apiVersion = 'v1';
 
-  // 웨이크워드 파일 경로 (assets/)
-  static const String wakeWordModelPath = 'assets/wake_words/porcupine_params_ko.pv';
-  static const String wakeWordKeywordPath = 'assets/wake_words/louis_ko.ppn';
-
   // 음성 설정
   static const String sttLocale = 'ko_KR';
   static const double ttsRate = 0.5;      // 0.0 ~ 1.0
