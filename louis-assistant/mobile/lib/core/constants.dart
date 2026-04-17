@@ -11,9 +11,6 @@ class AppConstants {
   );
   static const String apiVersion = 'v1';
 
-  // 웨이크워드 (sherpa-onnx, 모델은 assets/wake_words/ 에 배치)
-  static const String wakeWordAssetDir = 'assets/wake_words/';
-
   // 음성 설정
   static const String sttLocale = 'ko_KR';
   static const double ttsRate = 0.5;      // 0.0 ~ 1.0

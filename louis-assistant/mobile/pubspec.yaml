@@ -15,13 +15,6 @@ dependencies:
   speech_to_text: ^6.6.0
   flutter_tts: ^4.0.2
 
-  # 웨이크워드 (sherpa-onnx 온디바이스 KWS)
-  # 모델 파일을 assets/wake_words/ 에 넣으면 자동 활성화
-  # 없으면 버튼 트리거 모드로 동작
-  sherpa_onnx: ^1.10.30
-  record: ^5.1.2
-  path_provider: ^2.1.4
-
   # HTTP
   dio: ^5.4.0
 
@@ -73,4 +66,3 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - assets/wake_words/
