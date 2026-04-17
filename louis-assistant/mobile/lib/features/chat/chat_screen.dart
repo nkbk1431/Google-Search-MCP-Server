@@ -18,6 +18,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _textController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // 웨이크워드 서비스 시작 (sherpa-onnx 모델 있으면 온디바이스 감지, 없으면 버튼만)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final wakeWord = ref.read(wakeWordServiceProvider);
+      final chatNotifier = ref.read(chatProvider.notifier);
+      wakeWord.start(onWakeWord: chatNotifier.handleWakeWord);
+    });
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     _textController.dispose();

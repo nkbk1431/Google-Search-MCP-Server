@@ -5,6 +5,7 @@
 - **백엔드**: Python 3.12.13 + FastAPI + LangGraph (Cloud Run 배포)
 - **모바일**: Flutter (Android 우선, iOS 차후)
 - **AI**: Claude Haiku 4.5 (기본) / Claude Sonnet 4.6 (복잡 작업)
+- **웨이크워드**: sherpa-onnx 온디바이스 감지 (모델 있을 때) + 마이크 버튼 폴백
 - **현재**: Phase 15 완료 — 프로덕션 배포 준비 완료
 
 > Python 버전: **3.12.13** 사용

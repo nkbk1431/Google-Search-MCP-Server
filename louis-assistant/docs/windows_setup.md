@@ -212,8 +212,11 @@ APK 위치: `mobile\build\app\outputs\flutter-apk\app-debug.apk`
 1. APK 설치 후 앱 실행
 2. 채팅 화면 하단 **마이크 버튼(🎤)** 누르면 음성 입력 시작
 3. "오늘 날씨 어때?" 같이 말하면 루이스가 응답
-4. 웨이크워드("루이스야") 호출은 현재 비활성화 — 버튼만 사용
-   (Picovoice가 유료라 제거함. 필요 시 무료 대체재 `sherpa_onnx` 연동 예정)
+4. **웨이크워드("루이스야") 사용 시**: `mobile/assets/wake_words/`에
+   sherpa-onnx 모델(encoder/decoder/joiner.onnx + tokens.txt + keywords.txt)을 배치하면
+   자동으로 온디바이스 감지가 활성화됨. 모델 다운로드는
+   [`mobile/assets/wake_words/README.md`](../mobile/assets/wake_words/README.md) 참조.
+   모델 없으면 버튼 트리거 모드로 폴백 (앱 동작에는 영향 없음)
 
 ### USB (adb) 설치
 
