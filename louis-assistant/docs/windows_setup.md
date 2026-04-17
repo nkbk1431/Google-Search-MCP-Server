@@ -1,14 +1,16 @@
 # 루이스(Louis) 개인비서 - Windows 개발 환경 설정 가이드
 
-Python 3.12.13 + venv 기준으로 백엔드를 실행하고,
+Python 3.12.13 전역 설치 기준으로 백엔드를 실행하고,
 Flutter로 Android APK를 빌드하는 전체 과정을 설명합니다.
+
+가상환경(venv/conda) 불필요. Python을 전역에 설치해 바로 사용합니다.
 
 ---
 
 ## 목차
 
 1. [사전 설치 확인](#1-사전-설치-확인)
-2. [가상환경 생성 (venv)](#2-가상환경-생성)
+2. [PowerShell 실행정책 설정](#2-powershell-실행정책-설정)
 3. [프로젝트 설정](#3-프로젝트-설정)
 4. [백엔드 실행](#4-백엔드-실행)
 5. [Flutter 설치 (APK 빌드용)](#5-flutter-설치)
@@ -53,38 +55,16 @@ nvidia-smi            # GPU 상태 확인 (GTX 1050 Ti)
 
 ---
 
-## 2. 가상환경 생성
+## 2. PowerShell 실행정책 설정
 
-Python 내장 `venv`를 사용합니다. Conda/Anaconda 불필요.
-
-> **먼저 실행 (최초 1회) — PowerShell 스크립트 실행 허용**
-> ```powershell
-> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-> ```
-> `.venv\Scripts\activate` 실행 시 **"이 시스템에서 스크립트를 실행할 수 없습니다"** 오류가 나면
-> 위 명령을 관리자 없이 일반 PowerShell에서 실행하면 해결됩니다.
+최초 1회 실행해 PowerShell 스크립트 실행을 허용합니다.
 
 ```powershell
-# 저장소 루트에서
-cd $HOME\projects\LOUIS_APP
-
-# 가상환경 생성 (최초 1회)
-python -m venv .venv
-
-# 활성화
-.venv\Scripts\activate
-# 프롬프트 앞에 (.venv) 표시 확인
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-> **매번 활성화하기 귀찮다면 — VS Code 자동 활성화**
-> VS Code에서 Python 인터프리터로 `.venv`를 선택하면
-> 터미널을 열 때 자동으로 활성화됩니다. (8번 참조)
-
-### 가상환경 비활성화 (필요 시)
-
-```powershell
-deactivate
-```
+`.\quick_start.ps1` 실행 시 **"이 시스템에서 스크립트를 실행할 수 없습니다"** 오류가 나면
+위 명령을 일반 PowerShell(관리자 권한 불필요)에서 실행하면 해결됩니다.
 
 ---
 
@@ -100,18 +80,18 @@ git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP
 ```
 
-### 3-2. 가상환경 활성화 및 의존성 설치
+### 3-2. 의존성 설치 (전역 설치)
 
 ```powershell
-.venv\Scripts\activate
+# pip/wheel 최신화
+python -m pip install --upgrade pip wheel
 
-# 의존성 설치
+# 백엔드 의존성 전역 설치
 pip install -r backend\requirements.txt
 ```
 
 > **lxml, numpy 빌드 에러 시:**
 > ```powershell
-> pip install --upgrade pip wheel
 > pip install lxml numpy --only-binary :all:
 > pip install -r backend\requirements.txt
 > ```
@@ -147,7 +127,6 @@ DATABASE_URL=sqlite+aiosqlite:///./louis.db
 ### 빠른 시작 스크립트
 
 ```powershell
-.venv\Scripts\activate
 cd backend
 .\quick_start.ps1
 ```
@@ -166,7 +145,6 @@ cd backend
 ### 수동 실행
 
 ```powershell
-.venv\Scripts\activate
 cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -174,7 +152,6 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ### 테스트 실행
 
 ```powershell
-.venv\Scripts\activate
 cd backend
 pytest tests/ -v --tb=short
 ```
@@ -230,7 +207,15 @@ APK 위치: `mobile\build\app\outputs\flutter-apk\app-debug.apk`
 
 ## 7. 스마트폰 테스트
 
-### USB (adb)
+### 사용 방법
+
+1. APK 설치 후 앱 실행
+2. 채팅 화면 하단 **마이크 버튼(🎤)** 누르면 음성 입력 시작
+3. "오늘 날씨 어때?" 같이 말하면 루이스가 응답
+4. 웨이크워드("루이스야") 호출은 현재 비활성화 — 버튼만 사용
+   (Picovoice가 유료라 제거함. 필요 시 무료 대체재 `sherpa_onnx` 연동 예정)
+
+### USB (adb) 설치
 
 ```powershell
 # 스마트폰: 개발자 옵션 → USB 디버깅 ON
@@ -238,7 +223,7 @@ adb devices
 adb install mobile\build\app\outputs\flutter-apk\app-debug.apk
 ```
 
-### 파일 전송
+### 파일 전송 설치
 
 APK를 카카오톡/USB로 전송 후 스마트폰에서 직접 설치.
 스마트폰 설정 → 보안 → **출처를 알 수 없는 앱 허용** 필요.
@@ -260,18 +245,16 @@ ms-python.pylance
 dart-code.flutter
 ```
 
-### Python 인터프리터 설정 (자동 활성화)
+### Python 인터프리터 설정
 
 1. `Ctrl+Shift+P` → **Python: Select Interpreter**
-2. `.venv\Scripts\python.exe` 선택
-3. 이후 VS Code 터미널 열 때 자동으로 venv 활성화
+2. 전역 Python 3.12.13 선택 (예: `C:\Python312\python.exe`)
 
 ### `.vscode/settings.json`
 
 ```json
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-  "python.terminal.activateEnvironment": true,
+  "python.defaultInterpreterPath": "python",
   "editor.formatOnSave": true
 }
 ```
@@ -310,7 +293,6 @@ pip install llama-cpp-python --force-reinstall --no-cache-dir
 ### `python` 명령을 찾지 못할 때
 
 ```powershell
-# Python PATH 확인
 where python
 # 없으면 Python 설치 시 "Add to PATH" 누락 → 재설치
 ```
@@ -329,7 +311,7 @@ pip install lxml numpy --only-binary :all:
 ### PowerShell 스크립트 실행 에러
 
 ```powershell
-# 관리자 PowerShell에서 실행
+# 일반 PowerShell(관리자 권한 불필요)에서
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
@@ -349,15 +331,21 @@ adb devices
 netsh advfirewall firewall add rule name="Louis Backend" dir=in action=allow protocol=TCP localport=8000
 ```
 
+### 패키지 충돌 발생 시
+
+전역 설치는 다른 Python 프로젝트와 버전 충돌이 날 수 있습니다. 그때만 venv 사용을 고려하세요:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r backend\requirements.txt
+```
+
 ---
 
 ## Linux (Ubuntu) 사용자는?
 
 ```bash
-conda activate louis   # Conda 환경 사용 중이라면
-# 또는
-source .venv/bin/activate   # venv 사용 시
-
 cd backend
 bash quick_start.sh
 ```

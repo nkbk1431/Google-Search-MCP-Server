@@ -13,7 +13,7 @@
 
 ## 빠른 시작
 
-### Windows (PowerShell + venv)
+### Windows (PowerShell)
 
 Python 3.12.13이 설치돼 있어야 합니다. [python.org](https://www.python.org/downloads/) 에서 설치 시 **"Add Python to PATH"** 반드시 체크.
 
@@ -25,14 +25,10 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP
 
-# 2. 가상환경 생성 및 활성화
-python -m venv .venv
-.venv\Scripts\activate
-
-# 3. 의존성 설치
+# 2. 의존성 설치 (전역 설치)
 pip install -r backend\requirements.txt
 
-# 4. 백엔드 실행 (.env 자동 생성 + 방화벽 설정 + IP 안내 포함)
+# 3. 백엔드 실행 (.env 자동 생성 + 방화벽 설정 + IP 안내 포함)
 cd backend
 .\quick_start.ps1
 # → http://localhost:8000/docs 에서 Swagger UI 확인
@@ -47,11 +43,7 @@ cd backend
 git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP
 
-# 2. 가상환경 생성 및 활성화
-python3 -m venv .venv
-source .venv/bin/activate
-
-# 3. 백엔드 실행 (의존성 자동 설치 + IP 안내 포함)
+# 2. 백엔드 실행 (의존성 자동 설치 + IP 안내 포함)
 cd backend
 bash quick_start.sh
 # → 스마트폰 접속 URL이 출력됩니다
@@ -114,14 +106,12 @@ bash build_test_apk.sh 192.168.0.10
 
 **Windows:**
 ```powershell
-.venv\Scripts\activate
 cd backend
 pytest tests/ -v --tb=short
 ```
 
 **Linux:**
 ```bash
-source .venv/bin/activate
 cd backend
 pytest tests/ -v --tb=short
 ```
@@ -268,7 +258,7 @@ louis-assistant/
 | Agent 프레임워크 | LangGraph ReAct + MemorySaver |
 | 백엔드 | Python 3.13.12 + FastAPI + SQLAlchemy + APScheduler |
 | 인증 | JWT (HS256) + Google OAuth 2.0 |
-| 개발 환경 | Python 3.12.13 + venv (Windows) / venv or Conda (Linux) |
+| 개발 환경 | Python 3.12.13 전역 설치 (Windows) / venv or Conda (Linux) |
 | 캐시 | Redis (선택) / 인메모리 폴백 |
 | 배포 | Google Cloud Run (서울 asia-northeast3) |
 | CI/CD | GitHub Actions + Cloud Build |
