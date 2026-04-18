@@ -1,4 +1,4 @@
-# 루이스 백엔드 - Windows 스마트폰 테스트용 빠른 시작 스크립트
+﻿# 루이스 백엔드 - Windows 스마트폰 테스트용 빠른 시작 스크립트
 # 사용법: .\quick_start.ps1 [포트]
 # 전제: Python 3.12.13 전역 설치, backend\ 디렉터리에서 실행
 param([int]$Port = 8000)
