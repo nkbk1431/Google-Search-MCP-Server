@@ -4,6 +4,8 @@
 param([int]$Port = 8000)
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ── 로컬 IP 감지 ──────────────────────────────────────────────────────
 $LocalIP = (Get-NetIPAddress -AddressFamily IPv4 |
@@ -24,10 +26,6 @@ APP_ENV=development
 APP_SECRET_KEY=test-secret-key-change-in-production
 APP_PORT=$Port
 APP_HOST=0.0.0.0
-
-# 날씨 기능을 사용하려면 아래 키를 입력하세요
-# OpenWeatherMap 무료 계정: https://openweathermap.org/api
-OPENWEATHER_API_KEY=
 
 # AI 응답을 사용하려면 아래 키를 입력하세요
 # Anthropic 콘솔: https://console.anthropic.com
