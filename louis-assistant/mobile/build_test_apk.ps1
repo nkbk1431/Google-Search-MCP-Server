@@ -1,13 +1,16 @@
-# 루이스 Flutter - Windows 스마트폰 테스트용 APK 빌드 스크립트
+﻿# 루이스 Flutter - Windows 스마트폰 테스트용 APK 빌드 스크립트
 # 사용법: .\build_test_apk.ps1 <백엔드_IP>
 #
 # 예시:
 #   .\build_test_apk.ps1 192.168.0.10
 #   .\build_test_apk.ps1 192.168.0.10:8080
 #   .\build_test_apk.ps1 abc123.ngrok-free.app
-param([string]$Input = "")
+param([string]$BackendAddr = "")
 
-if (-not $Input) {
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
+if (-not $BackendAddr) {
     Write-Host "사용법: .\build_test_apk.ps1 <백엔드_주소>" -ForegroundColor Red
     Write-Host ""
     Write-Host "예시:"
@@ -18,14 +21,14 @@ if (-not $Input) {
 }
 
 # http:// 없으면 자동 추가
-if ($Input -notmatch "^https?://") {
-    if ($Input -match "ngrok") {
-        $BaseUrl = "https://$Input"
+if ($BackendAddr -notmatch "^https?://") {
+    if ($BackendAddr -match "ngrok") {
+        $BaseUrl = "https://$BackendAddr"
     } else {
-        $BaseUrl = "http://$Input"
+        $BaseUrl = "http://$BackendAddr"
     }
 } else {
-    $BaseUrl = $Input
+    $BaseUrl = $BackendAddr
 }
 
 Write-Host ""
@@ -38,8 +41,7 @@ Write-Host ""
 # Flutter 설치 확인
 if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
     Write-Host "[에러] flutter 명령을 찾을 수 없어요." -ForegroundColor Red
-    Write-Host "Flutter SDK 설치 후 PATH에 추가해주세요:" -ForegroundColor Yellow
-    Write-Host "https://flutter.dev/docs/get-started/install/windows" -ForegroundColor Gray
+    Write-Host "Flutter SDK 설치 후 PATH에 추가해주세요." -ForegroundColor Yellow
     exit 1
 }
 
@@ -72,7 +74,6 @@ if (Test-Path $ApkPath) {
     Write-Host "    비밀번호: louis1234" -ForegroundColor Gray
     Write-Host "========================================" -ForegroundColor Green
 
-    # 탐색기에서 APK 파일 위치 열기 (선택)
     $open = Read-Host "`n탐색기에서 APK 파일 위치를 열까요? (y/n)"
     if ($open -eq 'y' -or $open -eq 'Y') {
         Start-Process explorer.exe -ArgumentList "/select,`"$(Resolve-Path $ApkPath)`""
