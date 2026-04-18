@@ -42,7 +42,7 @@ LOG_LEVEL=INFO
 
 # ── 의존성 설치 ────────────────────────────────────────────────────────
 Write-Host ">>> Python 패키지 설치 중..." -ForegroundColor Yellow
-pip install -r requirements.txt -q
+python -m pip install -r requirements.txt -q
 Write-Host ""
 
 # ── 방화벽 규칙 확인 및 추가 (관리자 권한 있을 때만) ──────────────────────
