@@ -8,7 +8,7 @@
 - **웨이크워드**: Android 내장 한국어 STT로 "루이스" 감지 (추가 설치 없음)
 - **현재**: Phase 15 완료 — 프로덕션 배포 준비 완료
 
-> Python 버전: **3.12.13** 사용
+> Python 버전: **3.13.x** 사용 (3.13.13 확인)
 
 ---
 
@@ -27,7 +27,7 @@ git clone https://github.com/LOUIS-1993-AI-Studio/LOUIS_APP.git
 cd LOUIS_APP
 
 # 2. 의존성 설치 (전역 설치)
-pip install -r backend\requirements.txt
+python -m pip install -r backend\requirements.txt
 
 # 3. 백엔드 실행 (.env 자동 생성 + 방화벽 설정 + IP 안내 포함)
 cd backend

@@ -87,13 +87,13 @@ cd LOUIS_APP
 python -m pip install --upgrade pip wheel
 
 # 백엔드 의존성 전역 설치
-pip install -r backend\requirements.txt
+python -m pip install -r backend\requirements.txt
 ```
 
 > **lxml, numpy 빌드 에러 시:**
 > ```powershell
-> pip install lxml numpy --only-binary :all:
-> pip install -r backend\requirements.txt
+> python -m pip install lxml numpy --only-binary :all:
+> python -m pip install -r backend\requirements.txt
 > ```
 
 ### 3-3. 환경변수 설정
