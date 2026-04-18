@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     # ── Picovoice ──────────────────────────────────────────
     picovoice_access_key: str = ""
 
-    # ── 날씨 (Open-Meteo 사용 - API 키 불필요) ────────────
-    kma_service_key: str = ""
+    # ── 날씨 (기상청 API허브) ──────────────────────────────
+    kma_auth_key: str = ""   # apihub.kma.go.kr authKey
 
     # ── Google OAuth ───────────────────────────────────────
     google_client_secret_file: str = "./credentials.json"

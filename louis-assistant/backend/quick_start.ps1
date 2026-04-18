@@ -27,9 +27,11 @@ APP_SECRET_KEY=test-secret-key-change-in-production
 APP_PORT=$Port
 APP_HOST=0.0.0.0
 
-# AI 응답을 사용하려면 아래 키를 입력하세요
-# Anthropic 콘솔: https://console.anthropic.com
+# AI 응답 (필수): https://console.anthropic.com
 ANTHROPIC_API_KEY=
+
+# 기상청 날씨 (권장): https://apihub.kma.go.kr → authKey 발급
+KMA_AUTH_KEY=
 
 DATABASE_URL=sqlite+aiosqlite:///./louis.db
 LOG_LEVEL=INFO

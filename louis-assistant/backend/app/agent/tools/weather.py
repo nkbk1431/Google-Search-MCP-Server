@@ -144,9 +144,8 @@ def _fetch_kma(city: str) -> dict:
     """기상청 초단기실황 + 단기예보로 현재 날씨·최고/최저기온 조회."""
     lat, lon, display = _resolve_city(city)
     nx, ny = _latlon_to_grid(lat, lon)
-    key = settings.kma_service_key
-    BASE = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0"
-    common = {"serviceKey": key, "numOfRows": 200, "pageNo": 1,
+    BASE = "https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0"
+    common = {"authKey": settings.kma_auth_key, "numOfRows": 1000, "pageNo": 1,
               "dataType": "JSON", "nx": nx, "ny": ny}
 
     # 초단기실황 (현재 기온·습도·풍속·강수형태)
@@ -225,8 +224,8 @@ def _fetch_open_meteo(city: str) -> dict:
 
 
 def _fetch_weather(city: str) -> dict:
-    """기상청 우선, KMA_SERVICE_KEY 없으면 Open-Meteo."""
-    if settings.kma_service_key:
+    """기상청 우선, KMA_AUTH_KEY 없으면 Open-Meteo."""
+    if settings.kma_auth_key:
         return _get_cached(f"kma:{city}", _fetch_kma, city)
     return _get_cached(f"om:{city}", _fetch_open_meteo, city)
 
