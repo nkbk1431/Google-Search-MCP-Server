@@ -86,15 +86,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Firebase 메시지 수신 서비스 -->
-        <service
-            android:name="com.google.firebase.messaging.FirebaseMessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
-
         <!-- flutter_local_notifications 알람 수신기 -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"

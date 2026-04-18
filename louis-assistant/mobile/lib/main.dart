@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/constants.dart';
-import 'core/services/api_client.dart';
 import 'core/services/notification_service.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/auth/login_screen.dart';
@@ -14,32 +11,8 @@ import 'features/memo/memo_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'shared/theme.dart';
 
-/// 백그라운드 FCM 메시지 핸들러 (최상위 함수 필수)
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  await NotificationService.show(
-    id: message.hashCode,
-    title: message.notification?.title ?? '루이스',
-    body: message.notification?.body ?? '',
-    payload: message.data['payload'],
-  );
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Firebase 초기화
-  // firebase_options.dart는 `flutterfire configure` 명령으로 생성합니다.
-  // ignore: avoid_catches_without_on_clauses
-  try {
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    await _setupFcm();
-  } catch (e) {
-    // Firebase 설정 없을 때 graceful degradation (개발 환경)
-    debugPrint('[Firebase] 초기화 스킵 (설정 없음): $e');
-  }
 
   // 알림 서비스 초기화
   await NotificationService.initialize();
