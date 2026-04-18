@@ -33,6 +33,11 @@ def _fire(content: str, reminder_id: str):
             log.warning(f"콜백 실패: {exc}")
 
 
+def _notify(content: str) -> None:
+    """알람 발생 시 호출 (reminder_id 없는 단순 알람용)."""
+    _fire(content, f"alarm-{content}")
+
+
 def _set_timer_direct(total_seconds: int, label: str) -> str:
     """LLM 없이 타이머를 직접 설정합니다 (router에서 호출)."""
     trigger = datetime.now() + timedelta(seconds=total_seconds)
