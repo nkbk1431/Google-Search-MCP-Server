@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import '../constants.dart';
@@ -26,6 +27,12 @@ class VoiceService extends ChangeNotifier {
   bool get sttAvailable => _sttAvailable;
 
   Future<void> initialize() async {
+    // 마이크 권한 요청 (Android 런타임 권한)
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      debugPrint('VoiceService: 마이크 권한 없음 ($micStatus)');
+    }
+
     // TTS 초기화
     await _tts.setLanguage('ko-KR');
     await _tts.setSpeechRate(_ttsRate);
